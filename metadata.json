@@ -1,0 +1,9 @@
+{
+  "name": "CoffeeLink Agri-OS",
+  "description": "Super App for Vietnamese Coffee Farmers. Supports Organic and Traditional farming tracking.",
+  "requestFramePermissions": [
+    "geolocation",
+    "microphone",
+    "camera"
+  ]
+}
