@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CoffeeLink</string>
+    <string name="title_activity_main">CoffeeLink</string>
+    <string name="package_name">com.coffeelink.app</string>
+    <string name="custom_url_scheme">com.coffeelink.app</string>
+</resources>

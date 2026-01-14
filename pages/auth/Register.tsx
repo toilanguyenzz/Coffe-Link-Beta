@@ -1,19 +1,28 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
+import { useAuth } from '../../contexts/AuthContext';
 import { UserProfile } from '../../types';
 import { Sprout, User, Lock, Mail, Loader2, ArrowRight, Leaf } from 'lucide-react';
 
 const Register: React.FC = () => {
+  const { currentUser } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (currentUser) {
+      navigate('/', { replace: true });
+    }
+  }, [currentUser, navigate]);
 
   // Helper: Generate Unique Farmer ID
   // Format: VN-{YY}-{RANDOM 5 DIGIT} -> e.g., VN-24-59281
@@ -74,19 +83,19 @@ const Register: React.FC = () => {
         <div className="overflow-hidden rounded-[2.5rem] bg-white shadow-2xl ring-1 ring-black/5">
           {/* Header Section */}
           <div className="relative bg-gradient-to-br from-teal-600 to-green-700 px-8 pt-10 pb-8 text-white overflow-hidden">
-             <div className="absolute top-0 right-0 p-4 opacity-10">
-                <Leaf className="h-32 w-32 -rotate-12 translate-x-5" />
-             </div>
-             
-             <div className="relative z-10 flex items-center gap-4">
-                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md shadow-inner border border-white/20">
-                    <Sprout className="h-6 w-6 text-white" />
-                 </div>
-                 <div>
-                    <h1 className="text-xl font-black tracking-tight">Tạo Tài Khoản</h1>
-                    <p className="text-teal-50 font-medium text-xs opacity-90">Tham gia cộng đồng Agri-OS</p>
-                 </div>
-             </div>
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+              <Leaf className="h-32 w-32 -rotate-12 translate-x-5" />
+            </div>
+
+            <div className="relative z-10 flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md shadow-inner border border-white/20">
+                <Sprout className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-black tracking-tight">Tạo Tài Khoản</h1>
+                <p className="text-teal-50 font-medium text-xs opacity-90">Tham gia cộng đồng Agri-OS</p>
+              </div>
+            </div>
           </div>
 
           <div className="p-8">
@@ -100,7 +109,7 @@ const Register: React.FC = () => {
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="group">
                 <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-gray-400 group-focus-within:text-teal-600 transition-colors">
-                    Họ và tên
+                  Họ và tên
                 </label>
                 <div className="relative transition-all duration-300 focus-within:scale-[1.02]">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
@@ -119,7 +128,7 @@ const Register: React.FC = () => {
 
               <div className="group">
                 <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-gray-400 group-focus-within:text-teal-600 transition-colors">
-                    Email
+                  Email
                 </label>
                 <div className="relative transition-all duration-300 focus-within:scale-[1.02]">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
@@ -138,7 +147,7 @@ const Register: React.FC = () => {
 
               <div className="group">
                 <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-gray-400 group-focus-within:text-teal-600 transition-colors">
-                    Mật khẩu
+                  Mật khẩu
                 </label>
                 <div className="relative transition-all duration-300 focus-within:scale-[1.02]">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
@@ -162,15 +171,15 @@ const Register: React.FC = () => {
               >
                 <div className="absolute inset-0 bg-white/20 translate-y-full transition-transform group-hover:translate-y-0"></div>
                 {loading ? (
-                    <div className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Đang khởi tạo...</span>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Đang khởi tạo...</span>
+                  </div>
                 ) : (
-                    <div className="flex items-center gap-2 relative z-10">
-                        <span>Đăng Ký Ngay</span>
-                        <ArrowRight className="h-4 w-4" />
-                    </div>
+                  <div className="flex items-center gap-2 relative z-10">
+                    <span>Đăng Ký Ngay</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </div>
                 )}
               </button>
             </form>
