@@ -1,11 +1,12 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense, useCallback } from 'react';
 import * as turf from '@turf/turf';
 import BottomNav from '../components/layout/BottomNav';
 import { useAuth } from '../contexts/AuthContext';
-import { ShieldCheck, TrendingUp, MapPin, AlertTriangle, Loader2 } from 'lucide-react';
+import { ShieldCheck, TrendingUp, MapPin, AlertTriangle, Loader2, Pencil, Eye } from 'lucide-react';
 
-// Lazy load the map component to prevent initialization issues
+// Lazy load the map components to prevent initialization issues
 const FarmMap = lazy(() => import('../components/map/FarmMap'));
+const FarmMapEditor = lazy(() => import('../components/map/FarmMapEditor'));
 
 // Map loading placeholder
 const MapPlaceholder = () => (
@@ -92,6 +93,7 @@ const SparklineChart: React.FC<{ data: number[] }> = ({ data }) => {
   );
 };
 
+
 const Profile: React.FC = () => {
   const { userProfile } = useAuth();
 
@@ -100,10 +102,14 @@ const Profile: React.FC = () => {
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [isInsideFarm, setIsInsideFarm] = useState<boolean>(true); // Default true
 
+  // State for map edit mode
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [farmPolygon, setFarmPolygon] = useState<number[][]>(MOCK_ASSET.farmCoordinates);
+  const [savedMessage, setSavedMessage] = useState<string | null>(null);
+
   // Use mock data or fallback to userProfile
   const displayName = userProfile?.displayName?.toUpperCase() || MOCK_ASSET.farmerName;
   const pucCode = userProfile?.farmerId || MOCK_ASSET.pucCode;
-  const farmPolygon = MOCK_ASSET.farmCoordinates;
   const center: [number, number] = userGPS
     ? [userGPS.lat, userGPS.lng]
     : [MOCK_ASSET.gpsCoordinates.lat, MOCK_ASSET.gpsCoordinates.lng];
@@ -111,6 +117,26 @@ const Profile: React.FC = () => {
   // QR Code URL
   const qrCodeData = `COFFEELINK:${pucCode}:${displayName}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCodeData)}&bgcolor=000000&color=FFFFFF`;
+
+  // Handle save from FarmMapEditor
+  const handleSaveFarmBoundary = useCallback((newPolygon: number[][]) => {
+    setFarmPolygon(newPolygon);
+    setIsEditMode(false);
+    setSavedMessage('Ranh giới vườn đã được lưu thành công!');
+
+    // Clear the saved message after 3 seconds
+    setTimeout(() => {
+      setSavedMessage(null);
+    }, 3000);
+
+    // TODO: Save to Firebase here
+    console.log('Saved farm boundary:', newPolygon);
+  }, []);
+
+  // Handle cancel from FarmMapEditor
+  const handleCancelEdit = useCallback(() => {
+    setIsEditMode(false);
+  }, []);
 
   // Get User's Live GPS Location (mobile-friendly, single-shot with fallback)
   useEffect(() => {
@@ -128,7 +154,7 @@ const Profile: React.FC = () => {
 
         // Check if user is inside farm polygon using Turf.js
         const point = turf.point([longitude, latitude]);
-        const polygon = turf.polygon([MOCK_ASSET.farmCoordinates.map(coord => [coord[1], coord[0]])]);
+        const polygon = turf.polygon([farmPolygon.map(coord => [coord[1], coord[0]])]);
         const inside = turf.booleanPointInPolygon(point, polygon);
         setIsInsideFarm(inside);
       },
@@ -144,7 +170,8 @@ const Profile: React.FC = () => {
         maximumAge: 0
       }
     );
-  }, []); // Only run once on mount
+  }, [farmPolygon]); // Re-run when farmPolygon changes
+
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] pb-28 font-sans overflow-y-auto">
@@ -171,106 +198,155 @@ const Profile: React.FC = () => {
             )}
           </div>
 
-          {/* The Map Container - REAL IMPLEMENTATION */}
+          {/* Success Message Toast */}
+          {savedMessage && (
+            <div
+              className="mb-3 p-3 rounded-xl flex items-center gap-2 animate-pulse"
+              style={{
+                background: 'rgba(0, 255, 148, 0.15)',
+                border: '1px solid rgba(0, 255, 148, 0.5)',
+              }}
+            >
+              <span className="text-sm font-bold text-[#00FF94]">✓ {savedMessage}</span>
+            </div>
+          )}
+
+          {/* The Map Container - Switches between View and Edit modes */}
           <div
             className="relative overflow-hidden shadow-2xl"
             style={{
               borderRadius: '20px',
-              border: '2px solid #064E3B',
-              boxShadow: '0 0 40px rgba(0, 255, 148, 0.3), 0 20px 60px rgba(0, 0, 0, 0.8)'
+              border: isEditMode ? '2px solid #FFD700' : '2px solid #064E3B',
+              boxShadow: isEditMode
+                ? '0 0 40px rgba(255, 215, 0, 0.4), 0 20px 60px rgba(0, 0, 0, 0.8)'
+                : '0 0 40px rgba(0, 255, 148, 0.3), 0 20px 60px rgba(0, 0, 0, 0.8)'
             }}
           >
-            <div className="relative h-72 w-full bg-[#064E3B]">
+            <div className="relative h-96 w-full bg-[#064E3B]">
               <Suspense fallback={<MapPlaceholder />}>
-                <FarmMap
-                  center={center}
-                  farmPolygon={farmPolygon}
-                  markerPosition={
-                    userGPS
-                      ? [userGPS.lat, userGPS.lng]
-                      : [MOCK_ASSET.gpsCoordinates.lat, MOCK_ASSET.gpsCoordinates.lng]
-                  }
-                />
+                {isEditMode ? (
+                  <FarmMapEditor
+                    center={center}
+                    initialPolygon={farmPolygon}
+                    markerPosition={
+                      userGPS
+                        ? [userGPS.lat, userGPS.lng]
+                        : [MOCK_ASSET.gpsCoordinates.lat, MOCK_ASSET.gpsCoordinates.lng]
+                    }
+                    onSave={handleSaveFarmBoundary}
+                    onCancel={handleCancelEdit}
+                  />
+                ) : (
+                  <FarmMap
+                    center={center}
+                    farmPolygon={farmPolygon}
+                    markerPosition={
+                      userGPS
+                        ? [userGPS.lat, userGPS.lng]
+                        : [MOCK_ASSET.gpsCoordinates.lat, MOCK_ASSET.gpsCoordinates.lng]
+                    }
+                  />
+                )}
               </Suspense>
 
-              {/* 📡 LIVE GPS Badge - Top Left (Animated Pulse) */}
-              <div
-                className="absolute top-3 left-3 px-3 py-2 rounded-xl flex items-center gap-2 z-10 animate-pulse"
-                style={{
-                  background: 'rgba(6, 78, 59, 0.90)',
-                  backdropFilter: 'blur(12px)',
-                  border: '1.5px solid rgba(0, 255, 148, 0.6)',
-                  boxShadow: '0 0 20px rgba(0, 255, 148, 0.4)'
-                }}
-              >
-                <MapPin className="h-4 w-4" style={{ color: '#00FF94' }} />
-                <span className="text-[11px] font-black uppercase tracking-wide text-white">
-                  📡 LIVE GPS
-                </span>
-              </div>
-
-              {/* 🛡️ EUDR VERIFIED Badge - Top Right (Dynamic based on location) */}
-              <div
-                className="absolute top-3 right-3 px-3 py-2 rounded-xl flex items-center gap-2 z-10"
-                style={{
-                  background: isInsideFarm
-                    ? 'rgba(6, 78, 59, 0.85)'
-                    : 'rgba(120, 0, 0, 0.85)',
-                  backdropFilter: 'blur(12px)',
-                  border: isInsideFarm
-                    ? '1.5px solid rgba(0, 255, 148, 0.6)'
-                    : '1.5px solid rgba(255, 0, 0, 0.6)',
-                  boxShadow: isInsideFarm
-                    ? '0 0 20px rgba(0, 255, 148, 0.4)'
-                    : '0 0 20px rgba(255, 0, 0, 0.4)'
-                }}
-              >
-                {isInsideFarm ? (
-                  <>
-                    <ShieldCheck className="h-4 w-4" style={{ color: '#00FF94' }} />
+              {/* Only show these overlays in view mode - FarmMapEditor has its own controls */}
+              {!isEditMode && (
+                <>
+                  {/* 📡 LIVE GPS Badge - Top Left (Animated Pulse) */}
+                  <div
+                    className="absolute top-3 left-3 px-3 py-2 rounded-xl flex items-center gap-2 z-10 animate-pulse"
+                    style={{
+                      background: 'rgba(6, 78, 59, 0.90)',
+                      backdropFilter: 'blur(12px)',
+                      border: '1.5px solid rgba(0, 255, 148, 0.6)',
+                      boxShadow: '0 0 20px rgba(0, 255, 148, 0.4)'
+                    }}
+                  >
+                    <MapPin className="h-4 w-4" style={{ color: '#00FF94' }} />
                     <span className="text-[11px] font-black uppercase tracking-wide text-white">
-                      🛡️ EUDR VERIFIED
+                      📡 LIVE GPS
                     </span>
-                  </>
-                ) : (
-                  <>
-                    <AlertTriangle className="h-4 w-4" style={{ color: '#FF4444' }} />
-                    <span className="text-[11px] font-black uppercase tracking-wide text-white">
-                      ⚠️ OUTSIDE ZONE
-                    </span>
-                  </>
-                )}
-              </div>
+                  </div>
 
-              {/* Bottom Info Overlay - Area, Trees & GPS Coordinates */}
-              <div
-                className="absolute bottom-0 left-0 right-0 p-4 z-10"
-                style={{
-                  background: 'linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, transparent 100%)'
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: '#00FF94' }}>
-                      Diện tích & Số cây
-                    </p>
-                    <p className="text-xl font-black text-white tracking-tight">
-                      {MOCK_ASSET.area} Ha • {MOCK_ASSET.treeCount.toLocaleString()} Gốc
-                    </p>
+                  {/* 🛡️ EUDR VERIFIED Badge - Top Right (Dynamic based on location) */}
+                  <div
+                    className="absolute top-3 right-3 px-3 py-2 rounded-xl flex items-center gap-2 z-10"
+                    style={{
+                      background: isInsideFarm
+                        ? 'rgba(6, 78, 59, 0.85)'
+                        : 'rgba(120, 0, 0, 0.85)',
+                      backdropFilter: 'blur(12px)',
+                      border: isInsideFarm
+                        ? '1.5px solid rgba(0, 255, 148, 0.6)'
+                        : '1.5px solid rgba(255, 0, 0, 0.6)',
+                      boxShadow: isInsideFarm
+                        ? '0 0 20px rgba(0, 255, 148, 0.4)'
+                        : '0 0 20px rgba(255, 0, 0, 0.4)'
+                    }}
+                  >
+                    {isInsideFarm ? (
+                      <>
+                        <ShieldCheck className="h-4 w-4" style={{ color: '#00FF94' }} />
+                        <span className="text-[11px] font-black uppercase tracking-wide text-white">
+                          🛡️ EUDR VERIFIED
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertTriangle className="h-4 w-4" style={{ color: '#FF4444' }} />
+                        <span className="text-[11px] font-black uppercase tracking-wide text-white">
+                          ⚠️ OUTSIDE ZONE
+                        </span>
+                      </>
+                    )}
                   </div>
-                  <div className="text-right">
-                    <p className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: '#00FF94' }}>
-                      GPS Coordinates
-                    </p>
-                    <p className="text-xs font-mono font-black text-white">
-                      {userGPS ? `${userGPS.lat.toFixed(4)}°N` : '—'}
-                    </p>
-                    <p className="text-xs font-mono font-black text-white">
-                      {userGPS ? `${userGPS.lng.toFixed(4)}°E` : '—'}
-                    </p>
+
+                  {/* Bottom Info Overlay - Area, Trees & GPS Coordinates */}
+                  <div
+                    className="absolute bottom-0 left-0 right-0 p-4 z-10"
+                    style={{
+                      background: 'linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, transparent 100%)'
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: '#00FF94' }}>
+                          Diện tích & Số cây
+                        </p>
+                        <p className="text-xl font-black text-white tracking-tight">
+                          {MOCK_ASSET.area} Ha • {MOCK_ASSET.treeCount.toLocaleString()} Gốc
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: '#00FF94' }}>
+                          GPS Coordinates
+                        </p>
+                        <p className="text-xs font-mono font-black text-white">
+                          {userGPS ? `${userGPS.lat.toFixed(4)}°N` : '—'}
+                        </p>
+                        <p className="text-xs font-mono font-black text-white">
+                          {userGPS ? `${userGPS.lng.toFixed(4)}°E` : '—'}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+
+                  {/* Edit Boundary Button */}
+                  <button
+                    onClick={() => setIsEditMode(true)}
+                    className="absolute bottom-4 right-4 z-20 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wide transition-all duration-300 hover:scale-105"
+                    style={{
+                      background: 'linear-gradient(135deg, #064E3B 0%, #000 100%)',
+                      border: '2px solid #FFD700',
+                      color: '#FFD700',
+                      boxShadow: '0 0 15px rgba(255, 215, 0, 0.3), 0 4px 12px rgba(0,0,0,0.5)'
+                    }}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Vẽ Ranh Giới
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

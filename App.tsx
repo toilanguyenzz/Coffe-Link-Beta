@@ -4,6 +4,7 @@ import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext';
 import { ToolsProvider } from './contexts/ToolsContext';
 import { DiaryProvider } from './contexts/DiaryContext';
+import { FarmDataProvider } from './contexts/FarmDataContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
@@ -13,12 +14,15 @@ import Finance from './pages/Finance';
 import Profile from './pages/Profile';
 import Marketplace from './pages/Marketplace';
 import Survey from './pages/Survey';
+import FarmConsultation from './pages/FarmConsultation';
+import GardenScanner from './pages/GardenScanner';
 
 export default function App() {
   return (
     <AuthProvider>
       <ToolsProvider>
         <DiaryProvider>
+          <FarmDataProvider>
             <Router>
               <Routes>
                 {/* Public Routes */}
@@ -54,6 +58,15 @@ export default function App() {
                 />
 
                 <Route
+                  path="/consult"
+                  element={
+                    <ProtectedRoute>
+                      <FarmConsultation />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
                   path="/finance"
                   element={
                     <ProtectedRoute>
@@ -79,13 +92,24 @@ export default function App() {
                     </ProtectedRoute>
                   }
                 />
-                
+
+                <Route
+                  path="/scan"
+                  element={
+                    <ProtectedRoute>
+                      <GardenScanner />
+                    </ProtectedRoute>
+                  }
+                />
+
                 {/* Catch all redirect */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Router>
+          </FarmDataProvider>
         </DiaryProvider>
       </ToolsProvider>
     </AuthProvider>
   );
 }
+

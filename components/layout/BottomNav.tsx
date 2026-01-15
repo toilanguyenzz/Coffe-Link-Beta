@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Home, CircleDollarSign, UserSquare2, ShoppingBag } from 'lucide-react';
+import { Home, CircleDollarSign, UserSquare2, ShoppingBag, Sparkles } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const BottomNav: React.FC = () => {
@@ -12,33 +12,41 @@ const BottomNav: React.FC = () => {
   return (
     <div className="fixed bottom-4 left-4 right-4 z-[900]">
       <div className="mx-auto flex h-[4.5rem] max-w-lg items-center justify-around rounded-[2.5rem] bg-black/80 backdrop-blur-xl border border-white/10 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] ring-1 ring-white/10 px-2">
-        
-        <NavButton 
-          active={isActive('/')} 
-          onClick={() => navigate('/')} 
-          icon={Home} 
-          label="Vườn" 
-        />
-        
-        <NavButton 
-          active={isActive('/market')} 
-          onClick={() => navigate('/market')} 
-          icon={ShoppingBag} 
-          label="Chợ" 
+
+        <NavButton
+          active={isActive('/')}
+          onClick={() => navigate('/')}
+          icon={Home}
+          label="Vườn"
         />
 
-        <NavButton 
-          active={isActive('/finance')} 
-          onClick={() => navigate('/finance')} 
-          icon={CircleDollarSign} 
-          label="Tiền" 
+        <NavButton
+          active={isActive('/market')}
+          onClick={() => navigate('/market')}
+          icon={ShoppingBag}
+          label="Chợ"
         />
-        
-        <NavButton 
-          active={isActive('/profile')} 
-          onClick={() => navigate('/profile')} 
-          icon={UserSquare2} 
-          label="Tôi" 
+
+        <NavButton
+          active={isActive('/consult')}
+          onClick={() => navigate('/consult')}
+          icon={Sparkles}
+          label="Tư Vấn"
+          highlight
+        />
+
+        <NavButton
+          active={isActive('/finance')}
+          onClick={() => navigate('/finance')}
+          icon={CircleDollarSign}
+          label="Tiền"
+        />
+
+        <NavButton
+          active={isActive('/profile')}
+          onClick={() => navigate('/profile')}
+          icon={UserSquare2}
+          label="Tôi"
         />
 
       </div>
@@ -51,18 +59,32 @@ interface NavButtonProps {
   onClick: () => void;
   icon: React.ElementType;
   label: string;
+  highlight?: boolean;
 }
 
-const NavButton: React.FC<NavButtonProps> = ({ active, onClick, icon: Icon, label }) => (
-  <button 
-    onClick={onClick} 
+const NavButton: React.FC<NavButtonProps> = ({ active, onClick, icon: Icon, label, highlight }) => (
+  <button
+    onClick={onClick}
     className="group relative flex flex-1 flex-col items-center justify-center py-2 transition-all active:scale-90"
   >
-    <div className={`relative flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-300 ${active ? 'bg-gradient-to-br from-green-400 to-emerald-600 shadow-lg shadow-green-500/30 translate-y-[-10%]' : 'bg-transparent group-hover:bg-white/5'}`}>
-       <Icon className={`h-5 w-5 transition-all ${active ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`} />
+    <div className={`relative flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-300 ${active
+        ? highlight
+          ? 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-orange-500/30 translate-y-[-10%]'
+          : 'bg-gradient-to-br from-green-400 to-emerald-600 shadow-lg shadow-green-500/30 translate-y-[-10%]'
+        : highlight
+          ? 'bg-gradient-to-br from-amber-400/20 to-orange-500/20 group-hover:from-amber-400/30 group-hover:to-orange-500/30'
+          : 'bg-transparent group-hover:bg-white/5'
+      }`}>
+      <Icon className={`h-5 w-5 transition-all ${active
+          ? 'text-white'
+          : highlight
+            ? 'text-amber-400 group-hover:text-amber-300'
+            : 'text-gray-400 group-hover:text-gray-200'
+        }`} />
     </div>
     {active && (
-      <span className="absolute -bottom-1 text-[9px] font-bold text-green-400 animate-in fade-in slide-in-from-bottom-2">
+      <span className={`absolute -bottom-1 text-[9px] font-bold animate-in fade-in slide-in-from-bottom-2 ${highlight ? 'text-amber-400' : 'text-green-400'
+        }`}>
         {label}
       </span>
     )}
