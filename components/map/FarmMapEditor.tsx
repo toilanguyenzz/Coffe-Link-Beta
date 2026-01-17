@@ -134,6 +134,8 @@ interface FarmMapEditorProps {
     markerPosition: [number, number];
     onSave?: (polygon: number[][]) => void;
     onCancel?: () => void;
+    targetAreaHa?: number; // Diện tích mục tiêu từ Smart Input
+    onAreaChange?: (areaHa: number) => void; // Callback khi diện tích thay đổi
 }
 
 const FarmMapEditor: React.FC<FarmMapEditorProps> = ({
@@ -141,7 +143,9 @@ const FarmMapEditor: React.FC<FarmMapEditorProps> = ({
     initialPolygon,
     markerPosition,
     onSave,
-    onCancel
+    onCancel,
+    targetAreaHa,
+    onAreaChange
 }) => {
     const uniqueId = useId();
     const [isMounted, setIsMounted] = useState(false);
@@ -152,6 +156,42 @@ const FarmMapEditor: React.FC<FarmMapEditorProps> = ({
     const [points, setPoints] = useState<[number, number][]>([]);
     const [isPolygonClosed, setIsPolygonClosed] = useState(false);
     const [areaData, setAreaData] = useState<{ hectares: number; squareMeters: number } | null>(null);
+    const [hasVibratedForTarget, setHasVibratedForTarget] = useState(false);
+    const [showExceededWarning, setShowExceededWarning] = useState(false);
+
+    // Progress bar status
+    const getProgressStatus = useCallback(() => {
+        if (!targetAreaHa || !areaData) return 'drawing';
+        const ratio = areaData.hectares / targetAreaHa;
+        if (ratio < 0.9) return 'drawing'; // Vàng - đang vẽ
+        if (ratio >= 0.9 && ratio <= 1.1) return 'target'; // Xanh - đạt chuẩn
+        return 'exceeded'; // Đỏ - vượt quá
+    }, [targetAreaHa, areaData]);
+
+    // Haptic feedback khi đạt mục tiêu
+    useEffect(() => {
+        if (!targetAreaHa || !areaData) return;
+        const status = getProgressStatus();
+
+        if (status === 'target' && !hasVibratedForTarget) {
+            setHasVibratedForTarget(true);
+            // Rung điện thoại
+            if ('vibrate' in navigator) {
+                navigator.vibrate(200);
+            }
+        } else if (status === 'drawing') {
+            setHasVibratedForTarget(false);
+        }
+
+        if (status === 'exceeded' && !showExceededWarning) {
+            setShowExceededWarning(true);
+        } else if (status !== 'exceeded') {
+            setShowExceededWarning(false);
+        }
+
+        // Callback area change
+        onAreaChange?.(areaData.hectares);
+    }, [areaData, targetAreaHa, getProgressStatus, hasVibratedForTarget, showExceededWarning, onAreaChange]);
 
     // Initialize with existing polygon if provided
     useEffect(() => {
@@ -386,9 +426,69 @@ const FarmMapEditor: React.FC<FarmMapEditorProps> = ({
             ) : (
                 /* Drawing Mode Controls */
                 <>
-                    {/* Top Status Bar */}
+                    {/* AI Progress Bar (Screen 2 Enhancement) */}
+                    {targetAreaHa && targetAreaHa > 0 && (
+                        <div
+                            className="absolute top-3 left-3 right-3 z-[1001] p-3 rounded-xl"
+                            style={{
+                                background: 'rgba(0, 0, 0, 0.95)',
+                                border: `2px solid ${getProgressStatus() === 'exceeded' ? '#EF4444' : getProgressStatus() === 'target' ? '#00FF94' : '#F59E0B'}`,
+                                boxShadow: `0 0 20px ${getProgressStatus() === 'exceeded' ? 'rgba(239, 68, 68, 0.3)' : getProgressStatus() === 'target' ? 'rgba(0, 255, 148, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`
+                            }}
+                        >
+                            {/* Target Label */}
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs text-white/60 font-bold uppercase">Mục tiêu: {targetAreaHa.toFixed(2)} Ha</span>
+                                <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded ${getProgressStatus() === 'exceeded' ? 'bg-red-500/20 text-red-400' :
+                                        getProgressStatus() === 'target' ? 'bg-green-500/20 text-green-400' :
+                                            'bg-amber-500/20 text-amber-400'
+                                    }`}>
+                                    {getProgressStatus() === 'exceeded' ? '⚠️ Vượt quá!' :
+                                        getProgressStatus() === 'target' ? '✓ Đạt chuẩn' :
+                                            '🎯 Đang vẽ...'}
+                                </span>
+                            </div>
+
+                            {/* Progress Bar */}
+                            <div className="relative h-3 bg-white/10 rounded-full overflow-hidden">
+                                <div
+                                    className="absolute inset-y-0 left-0 rounded-full transition-all duration-300"
+                                    style={{
+                                        width: `${Math.min((areaData?.hectares || 0) / targetAreaHa * 100, 100)}%`,
+                                        background: getProgressStatus() === 'exceeded'
+                                            ? 'linear-gradient(90deg, #EF4444 0%, #DC2626 100%)'
+                                            : getProgressStatus() === 'target'
+                                                ? 'linear-gradient(90deg, #00FF94 0%, #00CC77 100%)'
+                                                : 'linear-gradient(90deg, #F59E0B 0%, #D97706 100%)',
+                                        boxShadow: `0 0 10px ${getProgressStatus() === 'exceeded' ? '#EF4444' : getProgressStatus() === 'target' ? '#00FF94' : '#F59E0B'}`
+                                    }}
+                                />
+                                {/* Target marker at 100% */}
+                                <div className="absolute inset-y-0 bg-white/50 w-0.5" style={{ left: '100%', transform: 'translateX(-50%)' }} />
+                            </div>
+
+                            {/* Current Area */}
+                            <div className="flex items-center justify-between mt-2">
+                                <span className="text-sm font-black text-[#FFD700]">
+                                    {areaData ? areaData.hectares.toFixed(4) : '0'} Ha
+                                </span>
+                                <span className="text-xs text-white/40">
+                                    {areaData ? `${Math.round((areaData.hectares / targetAreaHa) * 100)}%` : '0%'}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Exceeded Warning Toast */}
+                    {showExceededWarning && (
+                        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-[1002] px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-bold animate-bounce">
+                            ⚠️ Vượt quá diện tích bác khai báo!
+                        </div>
+                    )}
+
+                    {/* Top Status Bar - adjust position if progress bar exists */}
                     <div
-                        className="absolute top-3 left-3 right-3 z-[1000] flex items-center justify-between px-4 py-3 rounded-xl"
+                        className={`absolute ${targetAreaHa ? 'top-28' : 'top-3'} left-3 right-3 z-[1000] flex items-center justify-between px-4 py-3 rounded-xl`}
                         style={{
                             background: 'rgba(0, 0, 0, 0.9)',
                             border: '2px solid #00FF94',

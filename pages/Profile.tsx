@@ -1,8 +1,9 @@
 import React, { useState, useEffect, lazy, Suspense, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import * as turf from '@turf/turf';
 import BottomNav from '../components/layout/BottomNav';
 import { useAuth } from '../contexts/AuthContext';
-import { ShieldCheck, TrendingUp, MapPin, AlertTriangle, Loader2, Pencil, Eye } from 'lucide-react';
+import { ShieldCheck, TrendingUp, MapPin, AlertTriangle, Loader2, Pencil, Eye, Sparkles } from 'lucide-react';
 
 // Lazy load the map components to prevent initialization issues
 const FarmMap = lazy(() => import('../components/map/FarmMap'));
@@ -96,6 +97,7 @@ const SparklineChart: React.FC<{ data: number[] }> = ({ data }) => {
 
 const Profile: React.FC = () => {
   const { userProfile } = useAuth();
+  const navigate = useNavigate();
 
   // State for GPS tracking
   const [userGPS, setUserGPS] = useState<{ lat: number; lng: number } | null>(null);
@@ -344,6 +346,21 @@ const Profile: React.FC = () => {
                   >
                     <Pencil className="h-3.5 w-3.5" />
                     Vẽ Ranh Giới
+                  </button>
+
+                  {/* Smart Farm Setup Button */}
+                  <button
+                    onClick={() => navigate('/farm-setup')}
+                    className="absolute bottom-4 left-4 z-20 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wide transition-all duration-300 hover:scale-105"
+                    style={{
+                      background: 'linear-gradient(135deg, #00FF94 0%, #00CC77 100%)',
+                      border: 'none',
+                      color: '#000',
+                      boxShadow: '0 0 20px rgba(0, 255, 148, 0.4), 0 4px 12px rgba(0,0,0,0.5)'
+                    }}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Khởi Tạo Mới
                   </button>
                 </>
               )}

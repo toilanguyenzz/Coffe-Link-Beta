@@ -10,8 +10,8 @@ const BottomNav: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-[900]">
-      <div className="mx-auto flex h-[4.5rem] max-w-lg items-center justify-around rounded-[2.5rem] bg-black/80 backdrop-blur-xl border border-white/10 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] ring-1 ring-white/10 px-2">
+    <div className="fixed bottom-2 left-2 right-2 z-[900] pb-safe">
+      <div className="mx-auto flex h-16 max-w-sm items-center justify-around rounded-full bg-black/90 backdrop-blur-xl border border-white/10 shadow-2xl px-1">
 
         <NavButton
           active={isActive('/')}
@@ -68,18 +68,18 @@ const NavButton: React.FC<NavButtonProps> = ({ active, onClick, icon: Icon, labe
     className="group relative flex flex-1 flex-col items-center justify-center py-2 transition-all active:scale-90"
   >
     <div className={`relative flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-300 ${active
-        ? highlight
-          ? 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-orange-500/30 translate-y-[-10%]'
-          : 'bg-gradient-to-br from-green-400 to-emerald-600 shadow-lg shadow-green-500/30 translate-y-[-10%]'
-        : highlight
-          ? 'bg-gradient-to-br from-amber-400/20 to-orange-500/20 group-hover:from-amber-400/30 group-hover:to-orange-500/30'
-          : 'bg-transparent group-hover:bg-white/5'
+      ? highlight
+        ? 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-orange-500/30 translate-y-[-10%]'
+        : 'bg-gradient-to-br from-green-400 to-emerald-600 shadow-lg shadow-green-500/30 translate-y-[-10%]'
+      : highlight
+        ? 'bg-gradient-to-br from-amber-400/20 to-orange-500/20 group-hover:from-amber-400/30 group-hover:to-orange-500/30'
+        : 'bg-transparent group-hover:bg-white/5'
       }`}>
       <Icon className={`h-5 w-5 transition-all ${active
-          ? 'text-white'
-          : highlight
-            ? 'text-amber-400 group-hover:text-amber-300'
-            : 'text-gray-400 group-hover:text-gray-200'
+        ? 'text-white'
+        : highlight
+          ? 'text-amber-400 group-hover:text-amber-300'
+          : 'text-gray-400 group-hover:text-gray-200'
         }`} />
     </div>
     {active && (

@@ -17,9 +17,14 @@ export interface FarmBoundary {
     centerPoint: { lat: number; lng: number };
 }
 
+export type CoffeeType = 'robusta' | 'arabica' | 'chari';
+
 export interface FarmInfo {
     boundary: FarmBoundary | null;
     treeCount: number;
+    coffeeType: CoffeeType;
+    hasRedBook: boolean;
+    redBookImage?: string;
     lastUpdated: Date | null;
 }
 
@@ -27,6 +32,7 @@ interface FarmDataContextType {
     farmInfo: FarmInfo;
     setFarmBoundary: (boundary: FarmBoundary) => void;
     setTreeCount: (count: number) => void;
+    setFarmDetails: (details: { coffeeType: CoffeeType; hasRedBook: boolean; redBookImage?: string }) => void;
     hasFarmData: boolean;
     clearFarmData: () => void;
 }
@@ -36,6 +42,9 @@ interface FarmDataContextType {
 const defaultFarmInfo: FarmInfo = {
     boundary: null,
     treeCount: 0,
+    coffeeType: 'robusta',
+    hasRedBook: false,
+    redBookImage: undefined,
     lastUpdated: null,
 };
 
@@ -68,6 +77,14 @@ export const FarmDataProvider: React.FC<FarmDataProviderProps> = ({ children }) 
         }));
     }, []);
 
+    const setFarmDetails = useCallback((details: { coffeeType: CoffeeType; hasRedBook: boolean; redBookImage?: string }) => {
+        setFarmInfo(prev => ({
+            ...prev,
+            ...details,
+            lastUpdated: new Date(),
+        }));
+    }, []);
+
     const clearFarmData = useCallback(() => {
         setFarmInfo(defaultFarmInfo);
     }, []);
@@ -80,6 +97,7 @@ export const FarmDataProvider: React.FC<FarmDataProviderProps> = ({ children }) 
                 farmInfo,
                 setFarmBoundary,
                 setTreeCount,
+                setFarmDetails,
                 hasFarmData,
                 clearFarmData,
             }}
