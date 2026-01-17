@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Home, CircleDollarSign, UserSquare2, ShoppingBag, Sparkles } from 'lucide-react';
+import { Home, UserSquare2, ShoppingBag, Sparkles, Warehouse } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const BottomNav: React.FC = () => {
@@ -21,10 +20,10 @@ const BottomNav: React.FC = () => {
         />
 
         <NavButton
-          active={isActive('/market')}
-          onClick={() => navigate('/market')}
-          icon={ShoppingBag}
-          label="Chợ"
+          active={isActive('/hub') || isActive('/hub-leader')}
+          onClick={() => navigate('/hub')}
+          icon={Warehouse}
+          label="Trạm"
         />
 
         <NavButton
@@ -36,10 +35,10 @@ const BottomNav: React.FC = () => {
         />
 
         <NavButton
-          active={isActive('/finance')}
-          onClick={() => navigate('/finance')}
-          icon={CircleDollarSign}
-          label="Tiền"
+          active={isActive('/market')}
+          onClick={() => navigate('/market')}
+          icon={ShoppingBag}
+          label="Chợ"
         />
 
         <NavButton
