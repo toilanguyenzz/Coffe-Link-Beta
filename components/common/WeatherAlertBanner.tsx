@@ -18,18 +18,19 @@ const WeatherAlertBanner: React.FC<WeatherAlertBannerProps> = ({
     const [isVisible, setIsVisible] = useState(propVisible ?? false);
     const [isDismissed, setIsDismissed] = useState(false);
 
-    // Simulate random weather alert for demo
+    // DISABLED: Random weather alert for demo
+    // Uncomment below to enable random alerts for testing
+    /*
     useEffect(() => {
-        // Demo: Show alert randomly (10% chance every 30 seconds)
         const checkForAlert = () => {
             if (!isDismissed && Math.random() < 0.1) {
                 setIsVisible(true);
             }
         };
-
         const interval = setInterval(checkForAlert, 30000);
         return () => clearInterval(interval);
     }, [isDismissed]);
+    */
 
     // Update từ props
     useEffect(() => {

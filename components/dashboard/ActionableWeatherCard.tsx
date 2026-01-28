@@ -33,19 +33,18 @@ interface DayForecast {
     advice?: string;
 }
 
-// Mock 3-day forecast
+// Mock 3-day forecast - Chư Păh, Gia Lai Demo
 const mock3DayForecast: DayForecast[] = [
     {
         day: 'Hôm nay',
-        date: '17/01',
-        tempMin: 22,
-        tempMax: 28,
-        condition: 'cloudy',
-        rainChance: 65,
-        humidity: 72,
-        windSpeed: 8,
-        warning: '🌧️ Mưa nhẹ chiều nay',
-        advice: 'Bón phân ngay buổi sáng trước khi mưa!'
+        date: '22/01',
+        tempMin: 18,
+        tempMax: 26,
+        condition: 'sunny',
+        rainChance: 10,
+        humidity: 55,
+        windSpeed: 5,
+        advice: '✅ Thời tiết lý tưởng để kiểm tra EUDR!'
     },
     {
         day: 'Ngày mai',
@@ -72,13 +71,14 @@ const mock3DayForecast: DayForecast[] = [
     }
 ];
 
-// Current weather
+// Current weather - Chư Păh, Gia Lai Demo
 const currentWeather = {
-    temp: 28,
-    humidity: 72,
-    windSpeed: 8,
-    rainIn: 2,
-    condition: 'cloudy' as const
+    temp: 26,
+    humidity: 55,
+    windSpeed: 5,
+    rainIn: 6,
+    condition: 'sunny' as const,
+    location: 'Chư Păh, Gia Lai'
 };
 
 function getWeatherIcon(condition: DayForecast['condition'], className = 'w-6 h-6') {

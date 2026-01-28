@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, UserSquare2, ShoppingBag, Sparkles, Warehouse } from 'lucide-react';
+import { Home, HelpCircle, User, Sprout, ShoppingBag } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const BottomNav: React.FC = () => {
@@ -9,29 +9,21 @@ const BottomNav: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="fixed bottom-2 left-2 right-2 z-[900] pb-safe">
-      <div className="mx-auto flex h-16 max-w-sm items-center justify-around rounded-full bg-black/90 backdrop-blur-xl border border-white/10 shadow-2xl px-1">
+    <div className="fixed bottom-0 left-0 right-0 z-[900] bg-white border-t border-gray-200 pb-safe">
+      <div className="mx-auto flex h-16 max-w-screen-sm items-center justify-around px-2">
 
         <NavButton
           active={isActive('/')}
           onClick={() => navigate('/')}
           icon={Home}
-          label="Vườn"
+          label="Trang chủ"
         />
 
         <NavButton
           active={isActive('/hub') || isActive('/hub-leader')}
           onClick={() => navigate('/hub')}
-          icon={Warehouse}
-          label="Trạm"
-        />
-
-        <NavButton
-          active={isActive('/consult')}
-          onClick={() => navigate('/consult')}
-          icon={Sparkles}
-          label="Tư Vấn"
-          highlight
+          icon={Sprout}
+          label="Vườn của tôi"
         />
 
         <NavButton
@@ -42,10 +34,17 @@ const BottomNav: React.FC = () => {
         />
 
         <NavButton
+          active={isActive('/consult')}
+          onClick={() => navigate('/consult')}
+          icon={HelpCircle}
+          label="Hỗ trợ"
+        />
+
+        <NavButton
           active={isActive('/profile')}
           onClick={() => navigate('/profile')}
-          icon={UserSquare2}
-          label="Tôi"
+          icon={User}
+          label="Tài khoản"
         />
 
       </div>
@@ -58,35 +57,22 @@ interface NavButtonProps {
   onClick: () => void;
   icon: React.ElementType;
   label: string;
-  highlight?: boolean;
 }
 
-const NavButton: React.FC<NavButtonProps> = ({ active, onClick, icon: Icon, label, highlight }) => (
+const NavButton: React.FC<NavButtonProps> = ({ active, onClick, icon: Icon, label }) => (
   <button
     onClick={onClick}
-    className="group relative flex flex-1 flex-col items-center justify-center py-2 transition-all active:scale-90"
+    className="flex flex-col items-center justify-center gap-1 py-2 px-2 transition-all active:scale-95"
   >
-    <div className={`relative flex h-10 w-10 items-center justify-center rounded-2xl transition-all duration-300 ${active
-      ? highlight
-        ? 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-orange-500/30 translate-y-[-10%]'
-        : 'bg-gradient-to-br from-green-400 to-emerald-600 shadow-lg shadow-green-500/30 translate-y-[-10%]'
-      : highlight
-        ? 'bg-gradient-to-br from-amber-400/20 to-orange-500/20 group-hover:from-amber-400/30 group-hover:to-orange-500/30'
-        : 'bg-transparent group-hover:bg-white/5'
+    <Icon
+      className={`h-6 w-6 transition-colors ${active ? 'text-[#2E7D32]' : 'text-gray-500'
+        }`}
+      strokeWidth={active ? 2.5 : 2}
+    />
+    <span className={`text-[10px] font-medium transition-colors ${active ? 'text-[#2E7D32]' : 'text-gray-500'
       }`}>
-      <Icon className={`h-5 w-5 transition-all ${active
-        ? 'text-white'
-        : highlight
-          ? 'text-amber-400 group-hover:text-amber-300'
-          : 'text-gray-400 group-hover:text-gray-200'
-        }`} />
-    </div>
-    {active && (
-      <span className={`absolute -bottom-1 text-[9px] font-bold animate-in fade-in slide-in-from-bottom-2 ${highlight ? 'text-amber-400' : 'text-green-400'
-        }`}>
-        {label}
-      </span>
-    )}
+      {label}
+    </span>
   </button>
 );
 

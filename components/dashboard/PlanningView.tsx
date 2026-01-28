@@ -1,14 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
-import { 
-  Mic, 
-  Calendar, 
-  DollarSign, 
-  Globe, 
-  X,
-  Loader2,
-  Sparkles,
-  CheckCircle2
+import {
+    Mic,
+    Settings,
+    ArrowLeft,
+    Clock,
+    Sparkles,
+    Loader2,
+    X
 } from 'lucide-react';
 import { useSmartVoiceProcessor, VoiceCommandResult } from '../../hooks/useSmartVoiceProcessor';
 import { useDiary, DiaryLog } from '../../contexts/DiaryContext';
@@ -16,253 +14,312 @@ import { useFinance } from '../../hooks/useFinance';
 import VoiceReviewModal, { FinalReviewData } from '../modals/VoiceReviewModal';
 
 interface PlanningViewProps {
-  farmingType: 'organic' | 'traditional';
-  autoStartVoice?: boolean;
+    farmingType: 'organic' | 'traditional';
+    autoStartVoice?: boolean;
+    onBack?: () => void;
 }
 
-const PlanningView: React.FC<PlanningViewProps> = ({ farmingType, autoStartVoice }) => {
-  // --- GLOBAL STATE ---
-  const { logs, addLog } = useDiary();
-  const { addTransaction } = useFinance();
-  
-  // --- LOGIC HOOK ---
-  const { processVoiceCommand } = useSmartVoiceProcessor();
+const PlanningView: React.FC<PlanningViewProps> = ({ farmingType, autoStartVoice, onBack }) => {
+    // --- GLOBAL STATE ---
+    const { logs, addLog } = useDiary();
+    const { addTransaction } = useFinance();
 
-  // --- LOCAL UI STATE ---
-  const [isListeningModalOpen, setIsListeningModalOpen] = useState(false);
-  const [voiceStep, setVoiceStep] = useState<'listening' | 'processing' | 'success'>('listening');
-  const [transcript, setTranscript] = useState("");
-  
-  // --- REVIEW MODAL STATE ---
-  const [reviewModalOpen, setReviewModalOpen] = useState(false);
-  const [pendingResult, setPendingResult] = useState<VoiceCommandResult | null>(null);
+    // --- LOGIC HOOK ---
+    const { processVoiceCommand } = useSmartVoiceProcessor();
 
-  // --- HANDLER: START LISTENING ---
-  const handleMicPress = () => {
-    setIsListeningModalOpen(true);
-    setVoiceStep('listening');
-    setTranscript("");
+    // --- LOCAL UI STATE ---
+    const [isListeningModalOpen, setIsListeningModalOpen] = useState(false);
+    const [voiceStep, setVoiceStep] = useState<'listening' | 'processing' | 'success'>('listening');
+    const [transcript, setTranscript] = useState("");
 
-    // SIMULATION OF SPEECH-TO-TEXT API
-    // Trong thực tế, đây là nơi gọi Web Speech API
-    setTimeout(() => {
-        // Random câu mẫu
-        const mocks = [
-            "Chiều nay bón 10 bao phân lân hết 2 triệu rưỡi",
-            "Mua 5 chai thuốc trừ sâu hết 500 ka",
-            "Bán 1 tấn cà tươi giá 18 triệu",
-            "Tưới nước lô 3 hết 2 tiếng"
-        ];
-        const randomPhrase = mocks[Math.floor(Math.random() * mocks.length)];
-        
-        setTranscript(randomPhrase);
-        setVoiceStep('processing');
+    // --- REVIEW MODAL STATE ---
+    const [reviewModalOpen, setReviewModalOpen] = useState(false);
+    const [pendingResult, setPendingResult] = useState<VoiceCommandResult | null>(null);
 
-        // AI XỬ LÝ LOGIC
+    // --- DATE MOCK ---
+    const dates = [
+        { day: 25, label: '25' },
+        { day: 26, label: '26', active: true },
+        { day: 27, label: '27' },
+        { day: 28, label: '28' },
+        { day: 29, label: '29' },
+        { day: 30, label: '30' },
+        { day: 31, label: '31' },
+        { day: 12, label: '12' },
+        { day: 13, label: '13' },
+    ];
+
+    // --- HANDLER: START LISTENING ---
+    const handleMicPress = () => {
+        setIsListeningModalOpen(true);
+        setVoiceStep('listening');
+        setTranscript("");
+
+        // SIMULATION
         setTimeout(() => {
-            const result = processVoiceCommand(randomPhrase);
-            
-            if (result.isValid) {
-                // Thay vì lưu ngay, ta lưu vào state tạm và mở Review Modal
-                setPendingResult(result);
-                setIsListeningModalOpen(false); // Đóng modal mic
-                setReviewModalOpen(true);       // Mở modal review
-            } else {
-                 alert(result.feedbackMessage);
-                 setVoiceStep('listening'); // Thử lại
-            }
-        }, 1000);
-    }, 2000);
-  };
+            const mocks = [
+                "Chiều nay bón 10 bao phân lân hết 2 triệu rưỡi",
+                "Tưới nhỏ giọt khu vực xen canh",
+                "Thăm vườn buổi sáng kiểm tra độ ẩm",
+                "Tưới nước đợt 2"
+            ];
+            const randomPhrase = mocks[Math.floor(Math.random() * mocks.length)];
 
-  // --- HANDLER: SAVE DATA FROM REVIEW MODAL ---
-  const handleConfirmSave = async (data: FinalReviewData) => {
-    setReviewModalOpen(false);
-    
-    // 1. Save to Diary (Luôn luôn ghi nhật ký)
-    const newLog: DiaryLog = {
-        id: Date.now().toString(),
-        time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-        title: data.title,
-        detail: data.note,
-        cost: data.isFinancialRecord ? data.amount : 0,
-        isAutoGenerated: true,
-        eudrLogged: true,
-        actionType: data.isFinancialRecord 
-            ? (data.transactionType === 'income' ? 'INCOME' : 'EXPENSE') 
-            : 'LOG_ONLY'
+            setTranscript(randomPhrase);
+            setVoiceStep('processing');
+
+            setTimeout(() => {
+                const result = processVoiceCommand(randomPhrase);
+                if (result.isValid) {
+                    setPendingResult(result);
+                    setIsListeningModalOpen(false);
+                    setReviewModalOpen(true);
+                } else {
+                    setVoiceStep('listening');
+                }
+            }, 1200);
+        }, 2000);
     };
-    addLog(newLog);
 
-    // 2. Save to Finance (Chỉ khi bật Toggle)
-    if (data.isFinancialRecord && data.amount > 0) {
-        await addTransaction({
-            amount: data.amount,
-            type: data.transactionType,
-            category: data.category || 'Khác',
-            note: `(Voice AI) ${data.title}`,
-            date: new Date().toISOString().split('T')[0]
-        });
-    }
-  };
+    const handleConfirmSave = async (data: FinalReviewData) => {
+        setReviewModalOpen(false);
+        const newLog: DiaryLog = {
+            id: Date.now().toString(),
+            time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+            title: data.title,
+            detail: data.note,
+            cost: data.isFinancialRecord ? data.amount : 0,
+            isAutoGenerated: true,
+            eudrLogged: true,
+            actionType: data.isFinancialRecord
+                ? (data.transactionType === 'income' ? 'INCOME' : 'EXPENSE')
+                : 'LOG_ONLY'
+        };
+        addLog(newLog);
 
-  // Auto start from Dashboard FAB
-  useEffect(() => {
-    if (autoStartVoice) {
-        handleMicPress();
-    }
-  }, [autoStartVoice]);
+        if (data.isFinancialRecord && data.amount > 0) {
+            await addTransaction({
+                amount: data.amount,
+                type: data.transactionType,
+                category: data.category || 'Khác',
+                note: `(Voice AI) ${data.title}`,
+                date: new Date().toISOString().split('T')[0]
+            });
+        }
+    };
 
-  return (
-    <div className="relative min-h-screen pb-32 font-sans">
-      
-      {/* 1. HEADER */}
-      <div className="mb-6 flex items-center justify-between px-2">
-        <div>
-            <h2 className="text-2xl font-black text-gray-800 tracking-tight">Nhật Ký Đồng Ruộng</h2>
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-widest">{new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-        </div>
-        <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
-            <Calendar className="h-5 w-5 text-gray-500" />
-        </div>
-      </div>
+    useEffect(() => {
+        if (autoStartVoice) {
+            handleMicPress();
+        }
+    }, [autoStartVoice]);
 
-      {/* 2. TIMELINE LIST */}
-      <div className="space-y-6 px-2 relative">
-         {/* Vertical Line */}
-         <div className="absolute left-[27px] top-4 bottom-0 w-0.5 bg-gray-200 rounded-full"></div>
+    return (
+        <div className="fixed inset-0 z-50 overflow-hidden flex flex-col">
+            {/* 1. PREMIUM BACKGROUND IMAGE */}
+            <div className="absolute inset-0 z-0">
+                <img
+                    src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=1200&auto=format&fit=crop"
+                    alt="Agriculture Background"
+                    className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-green-900/40 to-black/60 backdrop-blur-[2px]" />
+            </div>
 
-         {logs.map((log, index) => (
-             <div key={log.id} className={`relative pl-10 animate-in slide-in-from-bottom-4 duration-500 delay-${index * 100}`}>
-                 {/* Timeline Dot */}
-                 <div className={`absolute left-[19px] top-4 h-4 w-4 rounded-full border-2 bg-white z-10 ${log.isAutoGenerated ? 'border-green-500' : 'border-gray-400'}`}>
-                    {log.isAutoGenerated && <div className="absolute inset-0 m-auto h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>}
-                 </div>
+            <div className="relative z-10 flex flex-col h-full max-w-md mx-auto w-full text-white">
 
-                 {/* THE RESULT CARD */}
-                 <div className={`overflow-hidden rounded-[1.5rem] bg-white p-5 shadow-sm transition-all hover:shadow-md ${log.isAutoGenerated ? 'border-l-4 border-green-500 shadow-green-100 ring-1 ring-green-50' : 'border border-gray-100'}`}>
-                     <div className="flex justify-between items-start mb-2">
-                         <div>
-                             <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded-md">{log.time}</span>
-                             <h3 className="text-lg font-black text-gray-800 mt-1">{log.title}</h3>
-                         </div>
-                         {log.isAutoGenerated && (
-                             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                                 <Sparkles className="h-4 w-4" />
-                             </div>
-                         )}
-                     </div>
+                {/* 2. TOP NAVIGATION */}
+                <div className="flex items-center justify-between px-6 pt-12 pb-6">
+                    <button
+                        onClick={onBack}
+                        className="flex items-center gap-2 text-white/90 hover:text-white transition-colors group"
+                    >
+                        <ArrowLeft className="w-6 h-6 group-active:-translate-x-1 transition-transform" />
+                        <span className="text-lg font-medium">Quay lại trang chủ</span>
+                    </button>
+                    <button className="p-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 active:scale-90 transition-transform">
+                        <Settings className="w-5 h-5 text-white/80" />
+                    </button>
+                </div>
 
-                     <p className="text-sm font-medium text-gray-600 mb-4">{log.detail}</p>
-
-                     {/* INTEGRATION BADGES */}
-                     {log.isAutoGenerated && (
-                         <div className="flex flex-col gap-2 bg-gray-50 p-3 rounded-xl border border-gray-100">
-                             
-                             {/* Finance Logic - Only show if recorded */}
-                             {log.actionType && log.actionType !== 'LOG_ONLY' && (
-                                 <div className="flex items-center justify-between">
-                                     <div className="flex items-center gap-2">
-                                         <div className={`p-1 rounded-full ${log.actionType === 'INCOME' ? 'bg-green-100' : 'bg-red-100'}`}>
-                                             <DollarSign className={`h-3 w-3 ${log.actionType === 'INCOME' ? 'text-green-600' : 'text-red-600'}`} />
-                                         </div>
-                                         <span className="text-xs font-bold text-gray-700">
-                                            {log.actionType === 'INCOME' ? 'Đã ghi Thu' : 'Đã ghi Chi'}
-                                         </span>
-                                     </div>
-                                     <span className={`text-xs font-black ${log.actionType === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
-                                        {log.actionType === 'INCOME' ? '+' : '-'} {log.cost?.toLocaleString('vi-VN')}đ
-                                     </span>
-                                 </div>
-                             )}
-                             
-                             {log.actionType && log.actionType !== 'LOG_ONLY' && <div className="h-px w-full bg-gray-200"></div>}
-
-                             {/* EUDR Badge */}
-                             <div className="flex items-center justify-between">
-                                 <div className="flex items-center gap-2">
-                                     <div className="p-1 bg-green-100 rounded-full">
-                                         <Globe className="h-3 w-3 text-green-600" />
-                                     </div>
-                                     <span className="text-xs font-bold text-gray-700">Truy xuất EUDR</span>
-                                 </div>
-                                 <span className="text-[10px] font-black uppercase text-green-600 flex items-center gap-1">
-                                     <CheckCircle2 className="h-3 w-3" /> Đã lưu vết
-                                 </span>
-                             </div>
-                         </div>
-                     )}
-                 </div>
-             </div>
-         ))}
-      </div>
-
-      {/* 3. HERO INTERACTION: FLOATING MIC BUTTON */}
-      <div className="fixed bottom-24 left-0 right-0 flex justify-center z-40 pointer-events-none">
-          <button 
-            onClick={handleMicPress}
-            className="pointer-events-auto group relative flex h-20 w-20 items-center justify-center rounded-full bg-green-600 shadow-2xl shadow-green-400/50 transition-transform active:scale-90 hover:scale-105"
-          >
-              <div className="absolute inset-0 rounded-full border-4 border-green-200 opacity-0 group-hover:animate-ping"></div>
-              <div className="absolute inset-0 rounded-full border-2 border-white opacity-20"></div>
-              <Mic className="h-8 w-8 text-white fill-white animate-pulse" />
-          </button>
-      </div>
-      <p className="fixed bottom-16 w-full text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest pointer-events-none z-30">
-          Chạm để ghi nhật ký
-      </p>
-
-      {/* 4. LISTENING MODAL (Voice Feedback) */}
-      {isListeningModalOpen && (
-          <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-              <div className="w-full bg-white rounded-t-[2.5rem] p-8 pb-12 shadow-2xl animate-in slide-in-from-bottom duration-300">
-                  <button 
-                    onClick={() => setIsListeningModalOpen(false)}
-                    className="absolute top-6 right-6 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200"
-                  >
-                      <X className="h-5 w-5" />
-                  </button>
-
-                  <div className="flex flex-col items-center text-center space-y-6">
-                      <div className="relative h-24 w-24 flex items-center justify-center">
-                          {voiceStep === 'listening' && (
-                              <>
-                                <div className="absolute inset-0 rounded-full bg-red-100 animate-ping"></div>
-                                <div className="relative h-20 w-20 rounded-full bg-red-500 flex items-center justify-center shadow-xl shadow-red-200">
-                                    <Mic className="h-8 w-8 text-white" />
+                {/* 3. DATE SELECTOR WIDGET */}
+                <div className="px-6 mb-10">
+                    <div className="bg-white/10 backdrop-blur-xl rounded-[2.5rem] border border-white/20 p-6">
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-4 px-1">
+                            THỨ HAI, 26 THÁNG 1
+                        </h3>
+                        <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+                            {dates.map((d, idx) => (
+                                <div
+                                    key={idx}
+                                    className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all ${d.active
+                                        ? 'bg-white text-black font-black scale-110 shadow-lg shadow-white/20'
+                                        : 'text-white/40 hover:text-white/80 font-bold'
+                                        }`}
+                                >
+                                    <span className="text-sm">{d.label}</span>
                                 </div>
-                              </>
-                          )}
-                          {voiceStep === 'processing' && (
-                              <div className="relative h-20 w-20 rounded-full bg-blue-500 flex items-center justify-center shadow-xl shadow-blue-200 animate-spin">
-                                  <Loader2 className="h-8 w-8 text-white" />
-                              </div>
-                          )}
-                      </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
 
-                      <div>
-                          <h3 className="text-xl font-black text-gray-900 mb-2">
-                              {voiceStep === 'listening' ? "Đang lắng nghe..." : "Đang xử lý..."}
-                          </h3>
-                          <p className="text-lg font-medium text-gray-600 min-h-[3rem] italic">
-                              "{transcript || "..."}"
-                          </p>
-                      </div>
-                  </div>
-              </div>
-          </div>
-      )}
+                {/* 4. MAIN TITLE */}
+                <div className="px-6 mb-8">
+                    <h2 className="text-2xl font-black tracking-tight drop-shadow-md">Nhật Ký Đồng Ruộng - Premium</h2>
+                </div>
 
-      {/* 5. REVIEW MODAL (Confirm Data) */}
-      <VoiceReviewModal 
-        isOpen={reviewModalOpen}
-        initialData={pendingResult}
-        onClose={() => setReviewModalOpen(false)}
-        onConfirm={handleConfirmSave}
-      />
+                {/* 5. TIMELINE LIST */}
+                <div className="flex-1 overflow-y-auto px-6 no-scrollbar pb-40">
+                    <div className="relative pl-10">
+                        {/* Vertical Glowing Line */}
+                        <div className="absolute left-[8px] top-6 bottom-10 w-px bg-white/20 shadow-[0_0_15px_rgba(255,255,255,0.3)]"></div>
 
-    </div>
-  );
+                        <div className="space-y-8">
+                            {logs.length > 0 ? logs.map((log, idx) => (
+                                <div key={log.id} className="relative group animate-in fade-in slide-in-from-bottom-8 duration-700" style={{ animationDelay: `${idx * 150}ms` }}>
+                                    {/* Glowing Timeline Node */}
+                                    <div className="absolute -left-[38px] top-6 w-5 h-5 flex items-center justify-center">
+                                        <div className="absolute inset-0 bg-yellow-400/30 rounded-full blur-[6px] group-hover:blur-[8px] transition-all"></div>
+                                        <div className="w-2.5 h-2.5 bg-white rounded-full relative z-10 shadow-[0_0_10px_white]"></div>
+                                    </div>
+
+                                    {/* Premium Neumorphic Card */}
+                                    <div className="bg-white text-gray-900 rounded-[2.5rem] p-6 shadow-2xl transition-transform active:scale-[0.98]">
+                                        <div className="flex items-center gap-2 text-gray-400 mb-3">
+                                            <Clock className="w-4 h-4" />
+                                            <span className="text-sm font-bold tracking-tight">{log.time}</span>
+                                        </div>
+                                        <h4 className="text-xl font-black tracking-tight mb-2">{log.title}</h4>
+                                        <p className="text-gray-500 font-medium leading-relaxed">{log.detail}</p>
+                                    </div>
+                                </div>
+                            )) : (
+                                <>
+                                    {/* Default placeholders if no logs */}
+                                    <div className="relative group">
+                                        <div className="absolute -left-[38px] top-6 w-5 h-5 flex items-center justify-center">
+                                            <div className="absolute inset-0 bg-yellow-400/30 rounded-full blur-[6px]"></div>
+                                            <div className="w-2.5 h-2.5 bg-white rounded-full relative z-10 shadow-[0_0_10px_white]"></div>
+                                        </div>
+                                        <div className="bg-white text-gray-900 rounded-[2.5rem] p-6 shadow-2xl">
+                                            <div className="flex items-center gap-2 text-gray-400 mb-3">
+                                                <Clock className="w-4 h-4" />
+                                                <span className="text-sm font-bold tracking-tight">08:30</span>
+                                            </div>
+                                            <h4 className="text-xl font-black tracking-tight mb-2">Thăm vườn buổi sáng</h4>
+                                            <p className="text-gray-500 font-medium leading-relaxed">Kiểm tra độ ẩm và sâu bệnh lô 1</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="relative group">
+                                        <div className="absolute -left-[38px] top-6 w-5 h-5 flex items-center justify-center">
+                                            <div className="absolute inset-0 bg-yellow-400/30 rounded-full blur-[6px]"></div>
+                                            <div className="w-2.5 h-2.5 bg-white rounded-full relative z-10 shadow-[0_0_10px_white]"></div>
+                                        </div>
+                                        <div className="bg-white text-gray-900 rounded-[2.5rem] p-6 shadow-2xl">
+                                            <div className="flex items-center gap-2 text-gray-400 mb-3">
+                                                <Clock className="w-4 h-4" />
+                                                <span className="text-sm font-bold tracking-tight">10:15</span>
+                                            </div>
+                                            <h4 className="text-xl font-black tracking-tight mb-2">Tưới nước đợt 2</h4>
+                                            <p className="text-gray-500 font-medium leading-relaxed">Tưới nhỏ giọt khu vực xen canh</p>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* 6. BOTTOM VOICE INTERACTION */}
+                <div className="absolute bottom-12 left-0 right-0 flex flex-col items-center gap-4">
+                    {/* Glow Effect around button */}
+                    <div className="relative group">
+                        <div className="absolute inset-0 bg-yellow-500/40 rounded-full blur-2xl group-hover:blur-3xl transition-all animate-pulse"></div>
+                        <button
+                            onClick={handleMicPress}
+                            className="relative z-10 w-24 h-24 bg-gradient-to-br from-yellow-200 via-yellow-400 to-amber-500 rounded-full flex items-center justify-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.8),0_15px_35px_rgba(180,120,0,0.4)] active:scale-90 transition-transform border-4 border-white/20"
+                        >
+                            <Mic className="w-10 h-10 text-amber-900 drop-shadow-sm" strokeWidth={2.5} />
+                        </button>
+                    </div>
+
+                    <span className="text-sm font-black tracking-[0.2em] text-yellow-200/80 drop-shadow-md">
+                        CHẠM ĐỂ GHI NHẬN
+                    </span>
+                </div>
+
+            </div>
+
+            {/* 7. LISTENING MODAL (Overlay) */}
+            {isListeningModalOpen && (
+                <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-300 px-6">
+                    <div className="w-full max-w-sm bg-white/10 backdrop-blur-2xl rounded-[3rem] p-8 border border-white/20 shadow-2xl flex flex-col items-center text-center">
+                        <button
+                            onClick={() => setIsListeningModalOpen(false)}
+                            className="absolute top-6 right-6 p-2 bg-white/10 rounded-full text-white/60 hover:text-white transition-colors"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
+
+                        <div className="mb-8">
+                            {voiceStep === 'listening' ? (
+                                <div className="relative h-24 w-24 flex items-center justify-center">
+                                    <div className="absolute inset-0 rounded-full bg-red-500/20 animate-ping"></div>
+                                    <div className="absolute inset-0 rounded-full bg-red-400/40 blur-xl"></div>
+                                    <div className="relative h-20 w-20 rounded-full bg-red-500 flex items-center justify-center shadow-xl">
+                                        <Mic className="h-10 w-10 text-white" />
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="relative h-24 w-24 flex items-center justify-center">
+                                    <div className="absolute inset-0 rounded-full bg-blue-500/20 animate-spin"></div>
+                                    <div className="relative h-20 w-20 rounded-full bg-blue-500 flex items-center justify-center shadow-xl">
+                                        <Loader2 className="h-10 w-10 text-white animate-spin" />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <h3 className="text-2xl font-black text-white mb-4 tracking-tight">
+                            {voiceStep === 'listening' ? "Đang lắng nghe..." : "Hệ thống đang xử lý..."}
+                        </h3>
+
+                        <div className="bg-white/10 rounded-2xl p-6 w-full border border-white/10 mb-2">
+                            <p className="text-lg font-bold text-white leading-relaxed italic opacity-90">
+                                "{transcript || "Bắt đầu nói..."}"
+                            </p>
+                        </div>
+
+                        <p className="text-xs font-medium text-white/40 uppercase tracking-widest mt-4">
+                            Giọng nói của bác đang được mã hóa
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* 8. REVIEW MODAL */}
+            <VoiceReviewModal
+                isOpen={reviewModalOpen}
+                initialData={pendingResult}
+                onClose={() => setReviewModalOpen(false)}
+                onConfirm={handleConfirmSave}
+            />
+
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                .no-scrollbar::-webkit-scrollbar {
+                  display: none;
+                }
+                .no-scrollbar {
+                  -ms-overflow-style: none;
+                  scrollbar-width: none;
+                }
+            `}} />
+
+        </div>
+    );
 };
 
 export default PlanningView;

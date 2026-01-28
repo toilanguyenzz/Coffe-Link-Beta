@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
-import { 
-  collection, 
-  query, 
-  orderBy, 
-  onSnapshot, 
-  runTransaction, 
-  doc, 
-  serverTimestamp 
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  runTransaction,
+  doc,
+  serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/DemoAuthContext';
 import { Deal } from '../types';
 
 export const useMarketplace = () => {
@@ -21,7 +21,7 @@ export const useMarketplace = () => {
   // 1. Logic Query
   useEffect(() => {
     setLoading(true);
-    
+
     // Query chỉ sắp xếp theo thời gian tạo để tránh lỗi Index phức tạp lúc đầu
     const q = query(
       collection(db, 'deals'),
@@ -47,7 +47,7 @@ export const useMarketplace = () => {
     }, (err) => {
       console.error("Lỗi tải Deals:", err);
       setError("Không thể tải danh sách sản phẩm.");
-      setLoading(false); 
+      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -77,21 +77,21 @@ export const useMarketplace = () => {
         }
 
         // C. Write Operations
-        
+
         // 1. Tăng số lượng (currentQuantity)
-        transaction.update(dealRef, { 
-            currentQuantity: currentQuantity + 1 
+        transaction.update(dealRef, {
+          currentQuantity: currentQuantity + 1
         });
 
         // 2. Tạo Order mới
         const newOrderRef = doc(collection(db, 'orders'));
         transaction.set(newOrderRef, {
-            dealId: dealId,
-            userId: currentUser.uid,
-            productName: data.title, // Sử dụng field 'title' mới
-            price: data.price,       // Sử dụng field 'price' mới
-            status: 'reserved',
-            createdAt: serverTimestamp()
+          dealId: dealId,
+          userId: currentUser.uid,
+          productName: data.title, // Sử dụng field 'title' mới
+          price: data.price,       // Sử dụng field 'price' mới
+          status: 'reserved',
+          createdAt: serverTimestamp()
         });
       });
 

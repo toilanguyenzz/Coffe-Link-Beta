@@ -6,9 +6,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useHub } from '../contexts/HubContext';
-import BottomNav from '../components/layout/BottomNav';
+import { useAuth } from '../contexts/DemoAuthContext';
+import { useHub } from '../contexts/DemoHubContext';
+
 import CampaignCard from '../components/hub/CampaignCard';
 import CampaignQRModal from '../components/hub/CampaignQRModal';
 import LeaderboardCard from '../components/hub/LeaderboardCard';
@@ -94,7 +94,7 @@ const HubLeaderDashboard: React.FC = () => {
                         Về trang Hub
                     </button>
                 </div>
-                <BottomNav />
+
             </div>
         );
     }
@@ -373,7 +373,7 @@ const HubLeaderDashboard: React.FC = () => {
                 />
             )}
 
-            <BottomNav />
+
         </div>
     );
 };

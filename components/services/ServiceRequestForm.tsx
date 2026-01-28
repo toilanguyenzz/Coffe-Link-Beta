@@ -5,8 +5,8 @@
  */
 
 import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useHub } from '../../contexts/HubContext';
+import { useAuth } from '../../contexts/DemoAuthContext';
+import { useHub } from '../../contexts/DemoHubContext';
 import { createP2PRequest, createHubPoolingRequest } from '../../services/ServiceRequestService';
 import { JobType } from '../../types';
 import { Calendar, Users, DollarSign, FileText, MapPin, Loader2 } from 'lucide-react';

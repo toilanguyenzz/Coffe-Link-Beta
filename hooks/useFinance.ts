@@ -1,18 +1,18 @@
 
 import { useState, useEffect } from 'react';
-import { 
-  collection, 
-  addDoc, 
+import {
+  collection,
+  addDoc,
   deleteDoc,
   doc,
-  query, 
-  where, 
-  orderBy, 
-  onSnapshot, 
-  serverTimestamp 
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/DemoAuthContext';
 
 export interface TransactionData {
   id?: string;
@@ -30,7 +30,7 @@ export const useFinance = () => {
   const [transactions, setTransactions] = useState<TransactionData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [financials, setFinancials] = useState({
     totalIncome: 0,
     totalExpense: 0,
@@ -63,11 +63,11 @@ export const useFinance = () => {
   const deleteTransaction = async (transactionId: string) => {
     if (!currentUser) return false;
     try {
-        await deleteDoc(doc(db, 'transactions', transactionId));
-        return true;
+      await deleteDoc(doc(db, 'transactions', transactionId));
+      return true;
     } catch (err: any) {
-        console.error("Lỗi xóa giao dịch:", err);
-        return false;
+      console.error("Lỗi xóa giao dịch:", err);
+      return false;
     }
   };
 
@@ -123,12 +123,12 @@ export const useFinance = () => {
     return () => unsubscribe();
   }, [currentUser]);
 
-  return { 
-    transactions, 
-    financials, 
-    addTransaction, 
+  return {
+    transactions,
+    financials,
+    addTransaction,
     deleteTransaction,
-    loading, 
-    error 
+    loading,
+    error
   };
 };

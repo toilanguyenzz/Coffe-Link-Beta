@@ -2,6 +2,14 @@ import React, { useId, useRef, useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Polygon, Marker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import {
+    generateMockJRCZone,
+    generateMockVNForestZone,
+    zoneToLeafletCoords,
+    getZoneCenter,
+    JRC_ZONE_STYLE,
+    VN_FOREST_STYLE
+} from '../../data/mockForestData';
 
 // Fix Leaflet default marker icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -23,6 +31,31 @@ const gpsIcon = new L.Icon({
     iconAnchor: [16, 16],
 });
 
+// Zone label icon creator
+const createZoneLabelIcon = (text: string, bgColor: string, borderColor: string) => new L.DivIcon({
+    className: 'zone-label-icon',
+    html: `
+    <div style="
+      background: ${bgColor};
+      color: white;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 10px;
+      font-weight: bold;
+      white-space: nowrap;
+      border: 2px solid ${borderColor};
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    ">
+      ${text}
+    </div>
+  `,
+    iconSize: [160, 30],
+    iconAnchor: [80, 15],
+});
+
 // Component to recenter map
 const RecenterMap: React.FC<{ center: [number, number] }> = ({ center }) => {
     const map = useMap();
@@ -36,14 +69,23 @@ interface FarmMapProps {
     center: [number, number];
     farmPolygon: number[][];
     markerPosition: [number, number];
+    showEudrZones?: boolean; // NEW: Option to show EUDR zones
 }
 
-const FarmMap: React.FC<FarmMapProps> = ({ center, farmPolygon, markerPosition }) => {
+const FarmMap: React.FC<FarmMapProps> = ({ center, farmPolygon, markerPosition, showEudrZones = true }) => {
     // Use React's useId for a stable, unique key that persists across re-renders
     const uniqueId = useId();
     // Track if component has mounted to prevent double initialization in React 18 Strict Mode
     const [isMounted, setIsMounted] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
+
+    // Generate EUDR zones based on center
+    const jrcZone = generateMockJRCZone(center[0], center[1]);
+    const vnZone = generateMockVNForestZone(center[0], center[1]);
+    const jrcLeafletCoords = zoneToLeafletCoords(jrcZone);
+    const vnLeafletCoords = zoneToLeafletCoords(vnZone);
+    const jrcCenter = getZoneCenter(jrcZone);
+    const vnCenter = getZoneCenter(vnZone);
 
     useEffect(() => {
         // Delay mounting to ensure DOM is ready and prevent double initialization
@@ -89,6 +131,43 @@ const FarmMap: React.FC<FarmMapProps> = ({ center, farmPolygon, markerPosition }
                 maxZoom={19}
             />
 
+            {/* EUDR Zones */}
+            {showEudrZones && (
+                <>
+                    {/* JRC EU Zone (Red) */}
+                    <Polygon
+                        positions={jrcLeafletCoords}
+                        pathOptions={{
+                            color: JRC_ZONE_STYLE.strokeColor,
+                            weight: JRC_ZONE_STYLE.weight,
+                            fillOpacity: 0.25,
+                            fillColor: JRC_ZONE_STYLE.fillColor,
+                            dashArray: JRC_ZONE_STYLE.dashArray,
+                        }}
+                    />
+                    <Marker
+                        position={jrcCenter}
+                        icon={createZoneLabelIcon('🇪🇺 JRC EU ZONE', 'rgba(220, 38, 38, 0.9)', '#FCA5A5')}
+                    />
+
+                    {/* VN Forest Zone (Green) */}
+                    <Polygon
+                        positions={vnLeafletCoords}
+                        pathOptions={{
+                            color: VN_FOREST_STYLE.strokeColor,
+                            weight: VN_FOREST_STYLE.weight,
+                            fillOpacity: 0.25,
+                            fillColor: VN_FOREST_STYLE.fillColor,
+                            dashArray: VN_FOREST_STYLE.dashArray,
+                        }}
+                    />
+                    <Marker
+                        position={vnCenter}
+                        icon={createZoneLabelIcon('🇻🇳 RỪNG VN', 'rgba(22, 163, 74, 0.9)', '#86EFAC')}
+                    />
+                </>
+            )}
+
             {/* Farm Polygon - NEON GREEN GLOWING */}
             <Polygon
                 positions={farmPolygon as [number, number][]}
@@ -107,3 +186,4 @@ const FarmMap: React.FC<FarmMapProps> = ({ center, farmPolygon, markerPosition }
 };
 
 export default FarmMap;
+

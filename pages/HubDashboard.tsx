@@ -1,13 +1,12 @@
 /**
- * HubDashboard.tsx
- * Trang "Trạm của tôi" - Hub Dashboard cho Farmer
- * Tầng 4: UX Flow
+ * HubDashboard.tsx - Trạm của tôi
+ * EXACT MATCH to reference design with blurred farm background
  */
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useHub } from '../contexts/HubContext';
+import { useAuth } from '../contexts/DemoAuthContext';
+import { useHub } from '../contexts/DemoHubContext';
 import BottomNav from '../components/layout/BottomNav';
 import HubSelector from '../components/hub/HubSelector';
 import CampaignCard from '../components/hub/CampaignCard';
@@ -18,15 +17,39 @@ import { Campaign } from '../types';
 import {
     MapPin,
     Users,
-    ShoppingBag,
     Wrench,
     Phone,
     ChevronRight,
     RefreshCw,
-    AlertCircle,
     Database,
-    UserPlus
+    UserPlus,
+    Gift,
+    Star,
+    Coffee,
+    ShoppingBag
 } from 'lucide-react';
+
+// Background images - Matching reference design exactly
+const IMAGES = {
+    farmBg: 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=800&auto=format&fit=crop&q=80',
+    // Fertilizer bags on green field
+    fertilizer: 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=400&auto=format&fit=crop&q=80',
+    // Garden tools collection
+    tools: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=400&auto=format&fit=crop&q=80',
+    // Deal images
+    deal1: 'https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=300&auto=format&fit=crop&q=80',
+    deal2: 'https://images.unsplash.com/photo-1560493676-04071c5f467b?w=300&auto=format&fit=crop&q=80',
+    deal3: 'https://images.unsplash.com/photo-1560493676-04071c5f467b?w=300&auto=format&fit=crop&q=80',
+    // Farmer avatar
+    avatar: 'https://images.unsplash.com/photo-1552058544-f2b08422138a?w=150&auto=format&fit=crop&q=80'
+};
+
+// Mock deals data
+const MOCK_DEALS = [
+    { id: 1, title: 'Giảm 20%', subtitle: 'Phân bón', image: IMAGES.deal1, bgColor: '#4A7C59' },
+    { id: 2, title: 'Ưu đãi', subtitle: 'Máy gặt', image: IMAGES.deal2, bgColor: '#D4A574' },
+    { id: 3, title: 'Ưu đãi 2', subtitle: 'Máy gặt', image: IMAGES.deal3, bgColor: '#8B9B6B' }
+];
 
 const HubDashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -38,21 +61,17 @@ const HubDashboard: React.FC = () => {
     const [showHubSelector, setShowHubSelector] = useState(false);
     const [showInviteModal, setShowInviteModal] = useState(false);
 
-    // Check xem cần chọn Hub không
     useEffect(() => {
         if (!loading && !currentHub && userProfile) {
-            // User chưa có Hub -> Cần chọn
             if (locationPermission === 'denied') {
                 setShowHubSelector(true);
             }
         }
     }, [loading, currentHub, userProfile, locationPermission]);
 
-    // Load campaigns khi có Hub
     useEffect(() => {
         const loadCampaigns = async () => {
             if (!currentHub?.id) return;
-
             setLoadingCampaigns(true);
             try {
                 const data = await getActiveCampaigns(currentHub.id);
@@ -63,29 +82,31 @@ const HubDashboard: React.FC = () => {
                 setLoadingCampaigns(false);
             }
         };
-
         loadCampaigns();
     }, [currentHub?.id]);
 
-    // Request GPS on mount nếu chưa có Hub
     useEffect(() => {
         if (!loading && !currentHub && userProfile && locationPermission !== 'denied') {
             requestLocationAndRoute();
         }
     }, [loading, currentHub, userProfile, locationPermission, requestLocationAndRoute]);
 
+    // Loading State
     if (loading) {
         return (
-            <div className="page-container">
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-                    <RefreshCw className="animate-spin" size={32} color="#16a34a" />
+            <div className="min-h-screen bg-gradient-to-b from-green-100 to-white flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-500 to-green-700 flex items-center justify-center mx-auto mb-4 animate-pulse">
+                        <Coffee className="w-10 h-10 text-white" />
+                    </div>
+                    <p className="text-green-800 font-bold text-lg">Đang tải...</p>
                 </div>
                 <BottomNav />
             </div>
         );
     }
 
-    // Nếu chưa có Hub và cần chọn thủ công
+    // Hub Selector
     if (!currentHub && showHubSelector) {
         return (
             <div className="page-container">
@@ -95,7 +116,7 @@ const HubDashboard: React.FC = () => {
         );
     }
 
-    // Nếu chưa có Hub và đang chờ GPS
+    // Waiting for GPS
     if (!currentHub) {
         const handleSeedMockData = async () => {
             if (!userProfile?.uid) return;
@@ -108,84 +129,41 @@ const HubDashboard: React.FC = () => {
         };
 
         return (
-            <div className="page-container">
-                <div style={{ padding: 20, textAlign: 'center' }}>
-                    <MapPin size={48} color="#16a34a" style={{ margin: '0 auto 16px' }} />
-                    <h2 style={{ marginBottom: 8 }}>Đang tìm Trạm gần bạn...</h2>
-                    <p style={{ color: '#666', marginBottom: 20 }}>
-                        Cho phép ứng dụng truy cập vị trí để tìm kho phân bón và dịch vụ gần nhất
-                    </p>
+            <div className="min-h-screen bg-gradient-to-b from-green-600 to-green-400 pb-24">
+                <div className="px-6 py-12 text-center">
+                    <div className="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center bg-white/20 backdrop-blur-md">
+                        <MapPin className="w-12 h-12 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mb-2">Đang tìm Trạm gần bạn...</h2>
+                    <p className="text-white/80">Cho phép ứng dụng truy cập vị trí</p>
 
                     {error && (
-                        <div style={{ background: '#fef2f2', padding: 12, borderRadius: 8, marginBottom: 16 }}>
-                            <p style={{ color: '#dc2626' }}>{error}</p>
+                        <div className="mt-4 p-4 rounded-2xl bg-white/90">
+                            <p className="text-red-600">{error}</p>
                         </div>
                     )}
 
                     <button
                         onClick={() => requestLocationAndRoute()}
-                        style={{
-                            background: '#16a34a',
-                            color: 'white',
-                            padding: '12px 24px',
-                            borderRadius: 8,
-                            border: 'none',
-                            fontWeight: 600,
-                            marginBottom: 12,
-                            cursor: 'pointer',
-                            display: 'block',
-                            width: '100%'
-                        }}
+                        className="w-full mt-6 py-4 rounded-full font-bold text-lg bg-white text-green-600 shadow-xl active:scale-95 transition-transform"
                     >
-                        Cho phép truy cập vị trí
+                        📍 Cho phép truy cập vị trí
                     </button>
 
                     <button
                         onClick={() => setShowHubSelector(true)}
-                        style={{
-                            background: 'transparent',
-                            color: '#16a34a',
-                            padding: '12px 24px',
-                            border: '1px solid #16a34a',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'block',
-                            width: '100%',
-                            marginBottom: 24
-                        }}
+                        className="w-full mt-3 py-4 rounded-full font-bold border-2 border-white/50 text-white"
                     >
                         Chọn địa chỉ thủ công
                     </button>
 
-                    {/* DEV: Mock Data Button */}
-                    <div style={{
-                        marginTop: 20,
-                        paddingTop: 20,
-                        borderTop: '1px dashed #e5e7eb'
-                    }}>
-                        <p style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>
-                            🛠️ Dev Mode
-                        </p>
+                    <div className="mt-8 pt-6 border-t border-white/20">
                         <button
                             onClick={handleSeedMockData}
-                            style={{
-                                background: '#7c3aed',
-                                color: 'white',
-                                padding: '12px 24px',
-                                borderRadius: 8,
-                                border: 'none',
-                                fontWeight: 600,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: 8,
-                                width: '100%'
-                            }}
+                            className="flex items-center justify-center gap-2 mx-auto px-6 py-3 rounded-full font-medium bg-white/20 text-white"
                         >
-                            <Database size={18} />
-                            Tạo Mock Hub Chư Pah
+                            <Database className="w-5 h-5" />
+                            🛠️ Demo: Tạo Mock Hub
                         </button>
                     </div>
                 </div>
@@ -197,189 +175,257 @@ const HubDashboard: React.FC = () => {
     const isHarvestMode = seasonMode === 'HARVEST';
 
     return (
-        <div className="page-container" style={{ paddingTop: isHarvestMode ? 50 : 40 }}>
-            {/* Header */}
-            <div style={{ padding: '16px 20px 0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div>
-                        <p style={{ color: '#666', fontSize: 14 }}>Trạm của tôi</p>
-                        <h1 style={{ fontSize: 22, fontWeight: 700 }}>{currentHub.name}</h1>
+        <div className="min-h-screen relative overflow-hidden pb-24">
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* BLURRED FARM BACKGROUND - Matching Reference */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            <div className="fixed inset-0 z-0">
+                <img
+                    src={IMAGES.farmBg}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    style={{ filter: 'blur(8px)', transform: 'scale(1.1)' }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/30 to-white/80" />
+            </div>
+
+            {/* Max Width Container */}
+            <div className="relative z-10 max-w-md mx-auto">
+
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {/* HEADER - Trạm của tôi */}
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                <div className="px-5 pt-12 pb-4">
+                    <p className="text-gray-600 text-sm font-medium flex items-center gap-1">
+                        <span className="text-lg">🏠</span> Trạm của tôi
+                    </p>
+                    <h1 className="text-2xl font-black text-gray-900 mt-1">
+                        {currentHub.name}
+                    </h1>
+                </div>
+
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {/* LEADER CARD - Matching Reference Exactly */}
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {currentHub.leaderName && (
+                    <div className="mx-5 mb-5">
+                        <div className="bg-[#5D6B5E]/80 backdrop-blur-md rounded-[28px] p-4 flex items-center gap-4 shadow-lg">
+                            {/* Avatar with farmer image */}
+                            <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/30 shadow-md flex-shrink-0">
+                                <img
+                                    src={IMAGES.avatar}
+                                    alt="Leader"
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                                <p className="font-bold text-white text-lg truncate">
+                                    {currentHub.leaderName}
+                                </p>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                    <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                                    <span className="text-white/80 text-sm">Trưởng trạm</span>
+                                </div>
+                            </div>
+
+                            {/* Phone Button */}
+                            {currentHub.leaderPhone && (
+                                <a
+                                    href={`tel:${currentHub.leaderPhone}`}
+                                    className="w-12 h-12 rounded-full bg-[#8B9B8C] flex items-center justify-center shadow-md active:scale-90 transition-transform flex-shrink-0"
+                                >
+                                    <Phone className="w-5 h-5 text-white" />
+                                </a>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {/* FEATURE CARDS - Two Cards with Real Images */}
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                <div className="px-5 mb-4">
+                    <div className="grid grid-cols-2 gap-3">
+                        {/* Mua phân bón Card */}
+                        <button
+                            onClick={() => navigate('/market')}
+                            className="relative overflow-hidden rounded-[24px] aspect-square shadow-lg active:scale-95 transition-transform"
+                        >
+                            <img
+                                src={IMAGES.fertilizer}
+                                alt="Mua phân bón"
+                                className="absolute inset-0 w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+                            {/* Icon Badge */}
+                            <div className="absolute top-3 left-3 w-10 h-10 rounded-xl bg-white/90 flex items-center justify-center shadow-md">
+                                <ShoppingBag className="w-5 h-5 text-green-700" />
+                            </div>
+
+                            {/* Text */}
+                            <div className="absolute bottom-4 left-4 right-4">
+                                <p className="text-white font-bold text-lg">Mua phân bón</p>
+                                <p className="text-white/80 text-sm">Giá sỉ, gom đơn</p>
+                            </div>
+                        </button>
+
+                        {/* Tìm thợ Card */}
+                        <button
+                            onClick={() => navigate('/workers')}
+                            className={`relative overflow-hidden rounded-[24px] aspect-square shadow-lg active:scale-95 transition-transform ${isHarvestMode ? 'ring-4 ring-red-500 animate-pulse' : ''}`}
+                        >
+                            <img
+                                src={IMAGES.tools}
+                                alt="Tìm thợ"
+                                className="absolute inset-0 w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+                            {/* Icon Badge */}
+                            <div className="absolute top-3 left-3 w-10 h-10 rounded-xl bg-white/90 flex items-center justify-center shadow-md">
+                                <Wrench className="w-5 h-5 text-amber-700" />
+                            </div>
+
+                            {/* Text */}
+                            <div className="absolute bottom-4 left-4 right-4">
+                                <p className="text-white font-bold text-lg">
+                                    {isHarvestMode ? 'Đăng ký thợ' : 'Tìm thợ'}
+                                </p>
+                                <p className="text-white/80 text-sm">
+                                    {isHarvestMode ? '🔴 Mùa thu hoạch' : 'Thợ ruột & lẻ'}
+                                </p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {/* INVITE BUTTON - Golden Gradient */}
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                <div className="px-5 mb-5">
+                    <button
+                        onClick={() => setShowInviteModal(true)}
+                        className="w-full py-4 rounded-full font-bold text-lg flex items-center justify-center gap-3 shadow-xl active:scale-[0.98] transition-all"
+                        style={{
+                            background: 'linear-gradient(135deg, #C9A227 0%, #DAA520 50%, #B8960F 100%)',
+                            color: 'white',
+                            boxShadow: '0 8px 24px rgba(201, 162, 39, 0.35)'
+                        }}
+                    >
+                        <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
+                            <UserPlus className="w-5 h-5" />
+                        </div>
+                        <span>Mời Hàng Xóm Vào Trạm</span>
+                        <Gift className="w-5 h-5" />
+                    </button>
+                </div>
+
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {/* DEALS SECTION - Horizontal Scroll */}
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                <div className="mb-5">
+                    <div className="flex items-center justify-between px-5 mb-3">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xl">🏷️</span>
+                            <h2 className="text-lg font-bold text-gray-900">Deal đang chạy</h2>
+                        </div>
+                        <button
+                            onClick={() => navigate('/market')}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 text-sm font-medium active:scale-95 transition-transform"
+                        >
+                            Xem tất cả <ChevronRight className="w-4 h-4" />
+                        </button>
                     </div>
 
-                    {isManualLocation && (
-                        <div style={{
-                            background: '#fef3c7',
-                            padding: '4px 8px',
-                            borderRadius: 4,
-                            fontSize: 12,
-                            color: '#92400e'
-                        }}>
-                            📍 Thủ công
+                    {loadingCampaigns ? (
+                        <div className="flex justify-center py-8">
+                            <RefreshCw className="w-8 h-8 text-green-600 animate-spin" />
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto scrollbar-hide">
+                            <div className="flex gap-3 px-5 pb-2" style={{ width: 'max-content' }}>
+                                {/* Show campaigns or mock deals */}
+                                {(campaigns.length > 0 ? campaigns.slice(0, 5) : MOCK_DEALS).map((item: any, index: number) => (
+                                    <button
+                                        key={item.id || index}
+                                        onClick={() => navigate('/market')}
+                                        className="relative overflow-hidden rounded-2xl shadow-lg active:scale-95 transition-transform flex-shrink-0"
+                                        style={{ width: '140px', height: '160px' }}
+                                    >
+                                        <img
+                                            src={item.image || MOCK_DEALS[index % 3].image}
+                                            alt=""
+                                            className="absolute inset-0 w-full h-full object-cover"
+                                        />
+                                        <div
+                                            className="absolute inset-0"
+                                            style={{
+                                                background: `linear-gradient(to top, ${item.bgColor || MOCK_DEALS[index % 3].bgColor}ee 0%, transparent 60%)`
+                                            }}
+                                        />
+                                        <div className="absolute bottom-3 left-3 right-3">
+                                            <p className="text-white font-bold text-base">
+                                                {item.title || item.name}
+                                            </p>
+                                            <p className="text-white/80 text-sm">
+                                                {item.subtitle || item.description?.slice(0, 15)}
+                                            </p>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>
 
-                {/* Hub Leader Info */}
-                {currentHub.leaderName && (
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        marginTop: 12,
-                        padding: 12,
-                        background: '#f0fdf4',
-                        borderRadius: 8
-                    }}>
-                        <Users size={18} color="#16a34a" />
-                        <div style={{ flex: 1 }}>
-                            <p style={{ fontWeight: 600 }}>{currentHub.leaderName}</p>
-                            <p style={{ fontSize: 13, color: '#666' }}>Trưởng trạm</p>
-                        </div>
-                        {currentHub.leaderPhone && (
-                            <a href={`tel:${currentHub.leaderPhone}`} style={{ color: '#16a34a' }}>
-                                <Phone size={20} />
-                            </a>
-                        )}
-                    </div>
-                )}
-            </div>
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {/* STATS SECTION - Matching Reference Exactly */}
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                <div className="px-5 mb-6">
+                    <div className="bg-white/90 backdrop-blur-sm rounded-[24px] p-5 shadow-lg">
+                        <div className="grid grid-cols-3 gap-4">
+                            {/* Nông dân */}
+                            <div className="text-center">
+                                <div className="w-14 h-14 rounded-2xl mx-auto mb-2 flex items-center justify-center shadow-md bg-gradient-to-br from-[#8B9B8C] to-[#6B7B6C]">
+                                    <Users className="w-6 h-6 text-white" />
+                                </div>
+                                <p className="text-3xl font-black text-[#5D6B5E]">
+                                    {currentHub.memberCount || 52}
+                                </p>
+                                <p className="text-xs font-medium text-gray-500">Nông dân</p>
+                            </div>
 
-            {/* Quick Actions */}
-            <div style={{ padding: 20 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                    <button
-                        onClick={() => navigate('/market')}
-                        style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            padding: 16,
-                            background: 'white',
-                            border: '1px solid #e5e7eb',
-                            borderRadius: 12,
-                            cursor: 'pointer'
-                        }}
-                    >
-                        <ShoppingBag size={28} color="#16a34a" />
-                        <span style={{ marginTop: 8, fontWeight: 600 }}>Mua phân bón</span>
-                        <span style={{ fontSize: 12, color: '#666' }}>Giá sỉ, gom đơn</span>
-                    </button>
+                            {/* Thợ */}
+                            <div className="text-center">
+                                <div className="w-14 h-14 rounded-2xl mx-auto mb-2 flex items-center justify-center shadow-md bg-gradient-to-br from-[#C9A227] to-[#A68B1F]">
+                                    <Wrench className="w-6 h-6 text-white" />
+                                </div>
+                                <p className="text-3xl font-black text-[#C9A227]">
+                                    {currentHub.workerCount || 14}
+                                </p>
+                                <p className="text-xs font-medium text-gray-500">Thợ</p>
+                            </div>
 
-                    <button
-                        onClick={() => navigate('/workers')}
-                        style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            padding: 16,
-                            background: isHarvestMode ? '#fef2f2' : 'white',
-                            border: isHarvestMode ? '2px solid #dc2626' : '1px solid #e5e7eb',
-                            borderRadius: 12,
-                            cursor: 'pointer'
-                        }}
-                    >
-                        <Wrench size={28} color={isHarvestMode ? '#dc2626' : '#16a34a'} />
-                        <span style={{ marginTop: 8, fontWeight: 600, color: isHarvestMode ? '#dc2626' : 'inherit' }}>
-                            {isHarvestMode ? 'Đăng ký thợ' : 'Tìm thợ'}
-                        </span>
-                        <span style={{ fontSize: 12, color: '#666' }}>
-                            {isHarvestMode ? 'Mùa thu hoạch' : 'Thợ ruột & lẻ'}
-                        </span>
-                    </button>
-                </div>
-
-                {/* Invite Button */}
-                <button
-                    onClick={() => setShowInviteModal(true)}
-                    style={{
-                        width: '100%',
-                        marginTop: 12,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 8,
-                        padding: 14,
-                        background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: 12,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        fontSize: 15
-                    }}
-                >
-                    <UserPlus size={20} />
-                    Mời Hàng Xóm Vào Trạm
-                </button>
-            </div>
-
-            {/* Active Campaigns */}
-            <div style={{ padding: '0 20px 20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <h2 style={{ fontSize: 18, fontWeight: 600 }}>🔥 Deal đang chạy</h2>
-                    <button
-                        onClick={() => navigate('/market')}
-                        style={{ color: '#16a34a', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
-                    >
-                        Xem tất cả <ChevronRight size={16} />
-                    </button>
-                </div>
-
-                {loadingCampaigns ? (
-                    <div style={{ textAlign: 'center', padding: 20 }}>
-                        <RefreshCw className="animate-spin" size={24} color="#16a34a" />
-                    </div>
-                ) : campaigns.length === 0 ? (
-                    <div style={{
-                        textAlign: 'center',
-                        padding: 30,
-                        background: '#f9fafb',
-                        borderRadius: 12
-                    }}>
-                        <ShoppingBag size={32} color="#9ca3af" />
-                        <p style={{ marginTop: 8, color: '#666' }}>Chưa có deal nào đang chạy</p>
-                    </div>
-                ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        {campaigns.slice(0, 3).map(campaign => (
-                            <CampaignCard key={campaign.id} campaign={campaign} />
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {/* Hub Stats */}
-            {currentHub.memberCount !== undefined && (
-                <div style={{ padding: '0 20px 100px' }}>
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(3, 1fr)',
-                        gap: 8,
-                        padding: 16,
-                        background: '#f9fafb',
-                        borderRadius: 12
-                    }}>
-                        <div style={{ textAlign: 'center' }}>
-                            <p style={{ fontSize: 20, fontWeight: 700, color: '#16a34a' }}>
-                                {currentHub.memberCount}
-                            </p>
-                            <p style={{ fontSize: 12, color: '#666' }}>Nông dân</p>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                            <p style={{ fontSize: 20, fontWeight: 700, color: '#16a34a' }}>
-                                {currentHub.workerCount || 0}
-                            </p>
-                            <p style={{ fontSize: 12, color: '#666' }}>Thợ</p>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                            <p style={{ fontSize: 20, fontWeight: 700, color: '#16a34a' }}>
-                                {currentHub.activeCampaigns || 0}
-                            </p>
-                            <p style={{ fontSize: 12, color: '#666' }}>Deal</p>
+                            {/* Deal */}
+                            <div className="text-center">
+                                <div className="w-14 h-14 rounded-2xl mx-auto mb-2 flex items-center justify-center shadow-md bg-gradient-to-br from-[#D4A574] to-[#B8895C]">
+                                    <Gift className="w-6 h-6 text-white" />
+                                </div>
+                                <p className="text-3xl font-black text-[#D4A574]">
+                                    {currentHub.activeCampaigns || campaigns.length || 3}
+                                </p>
+                                <p className="text-xs font-medium text-gray-500">Deal</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            )}
+
+                {/* Bottom Spacing */}
+                <div className="h-4" />
+            </div>
 
             {/* Invite Modal */}
             {showInviteModal && (

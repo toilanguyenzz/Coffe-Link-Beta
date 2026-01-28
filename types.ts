@@ -65,7 +65,7 @@ export interface UserProfile {
 
   // ========== HUB-CENTRIC FIELDS (NEW) ==========
   // Expanded role for Hub system
-  role: 'farmer' | 'worker' | 'hub_leader' | 'contractor' | 'expert' | 'trader' | 'admin';
+  role: 'farmer' | 'worker' | 'hub_leader' | 'contractor' | 'expert' | 'trader' | 'admin' | 'agent';
 
   // Hub assignment
   hubId?: string;                  // ID của Hub user thuộc về (1 User = 1 Hub)
@@ -83,6 +83,16 @@ export interface UserProfile {
 
   // Worker-specific profile
   workerProfile?: WorkerProfile;
+
+  // Agent-specific profile (Đại lý thu mua)
+  agentProfile?: {
+    shopName: string;
+    taxId?: string;
+    address: string;
+    totalPurchased: number;   // kg
+    totalFarmers: number;
+    rating: number;
+  };
 
   // ========== REFERRAL SYSTEM FIELDS ==========
   referredBy?: string;             // UID của Trưởng Hub giới thiệu

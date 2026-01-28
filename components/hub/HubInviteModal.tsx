@@ -5,8 +5,8 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useHub } from '../../contexts/HubContext';
+import { useAuth } from '../../contexts/DemoAuthContext';
+import { useHub } from '../../contexts/DemoHubContext';
 import { generateCampaignQR } from '../../services/QRService';
 import {
     generateInviteLink,

@@ -1,596 +1,283 @@
-import React, { useState, useEffect, lazy, Suspense, useCallback } from 'react';
+/**
+ * Profile.tsx - Farmer Passport UI
+ * EXACT match to reference design
+ */
+
+import React, { useState, Suspense, lazy } from 'react';
 import { useNavigate } from 'react-router-dom';
-import * as turf from '@turf/turf';
-import BottomNav from '../components/layout/BottomNav';
-import { useAuth } from '../contexts/AuthContext';
-import { ShieldCheck, TrendingUp, MapPin, AlertTriangle, Loader2, Pencil, Eye, Sparkles } from 'lucide-react';
+import {
+  Star,
+  MapPin,
+  Phone,
+  LogOut,
+  Loader2,
+  Shield,
+  Globe,
+  X,
+} from 'lucide-react';
 
-// Lazy load the map components to prevent initialization issues
-const FarmMap = lazy(() => import('../components/map/FarmMap'));
-const FarmMapEditor = lazy(() => import('../components/map/FarmMapEditor'));
 
-// Map loading placeholder
-const MapPlaceholder = () => (
-  <div className="w-full h-full flex items-center justify-center bg-[#064E3B]">
-    <div className="text-center">
-      <Loader2 className="h-8 w-8 animate-spin text-[#00FF94] mx-auto mb-2" />
-      <p className="text-sm text-white/70">Loading Map...</p>
-    </div>
+// Lazy load EUDR Map
+const EudrCheckFeature = lazy(() => import('../components/features/EudrCheckFeature'));
+
+const FARMER_DATA = {
+  name: 'TRẦN VĂN MINH',
+  displayName: 'Bác Minh',
+  avatar: 'https://i.pravatar.cc/300?img=11',
+};
+
+const MapPlaceholder: React.FC = () => (
+  <div className="h-full w-full bg-slate-900 flex flex-col items-center justify-center gap-4">
+    <Loader2 className="w-8 h-8 text-green-400 animate-spin" />
+    <p className="text-white/60 text-sm">Đang tải bản đồ...</p>
   </div>
 );
 
-// ═══════════════════════════════════════════════════════════════════════
-// MOCK ASSET DATA - "Digital Red Book" (Sổ Đỏ Số) - ENHANCED
-// ═══════════════════════════════════════════════════════════════════════
-const MOCK_ASSET = {
-  farmerName: 'NGUYỄN VĂN A',
-  pucCode: 'VN-DL-CUMGAR-0882',
-  farmCoordinates: [
-    [12.2345, 108.6789],
-    [12.2355, 108.6799],
-    [12.2365, 108.6795],
-    [12.2360, 108.6780],
-    [12.2345, 108.6789]
-  ],
-  area: 1.8, // Hectares
-  treeCount: 1200,
-  valuation: 720500000, // VND
-  trend: 2.5, // Percentage
-  eudrVerified: true,
-
-  // NEW: GPS & Compliance
-  gpsCoordinates: { lat: 12.2355, lng: 108.6790 },
-  complianceCheck: {
-    status: 'PASSED',
-    cutoffDate: '2020-12-31',
-    verifiedAt: '2025-01-10',
-    certification: 'EUDR EU 2023/1115'
-  },
-
-  // NEW: Price History (Last 7 days in millions VND)
-  priceHistory: [680, 690, 695, 705, 710, 715, 720.5],
-  lastUpdated: '2026-01-13T11:00:00+07:00'
-};
-
-
-
-// Mini Sparkline Chart Component
-const SparklineChart: React.FC<{ data: number[] }> = ({ data }) => {
-  const width = 120;
-  const height = 40;
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-  const range = max - min;
-
-  const points = data.map((value, index) => {
-    const x = (index / (data.length - 1)) * width;
-    const y = height - ((value - min) / range) * height;
-    return `${x},${y}`;
-  }).join(' ');
-
-  return (
-    <svg width={width} height={height} className="inline-block">
-      <polyline
-        points={points}
-        fill="none"
-        stroke="#00FF94"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Gradient fill under line */}
-      <polygon
-        points={`0,${height} ${points} ${width},${height}`}
-        fill="url(#gradient)"
-        opacity="0.2"
-      />
-      <defs>
-        <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#00FF94" stopOpacity="0.8" />
-          <stop offset="100%" stopColor="#00FF94" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-};
-
-
 const Profile: React.FC = () => {
-  const { userProfile } = useAuth();
   const navigate = useNavigate();
 
-  // State for GPS tracking
-  const [userGPS, setUserGPS] = useState<{ lat: number; lng: number } | null>(null);
-  const [gpsError, setGpsError] = useState<string | null>(null);
-  const [isInsideFarm, setIsInsideFarm] = useState<boolean>(true); // Default true
+  const [isVerified, setIsVerified] = useState(() => {
+    const savedStatus = localStorage.getItem('eudr_status');
+    return savedStatus === 'safe' || savedStatus === 'warning';
+  });
 
-  // State for map edit mode
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [farmPolygon, setFarmPolygon] = useState<number[][]>(MOCK_ASSET.farmCoordinates);
-  const [savedMessage, setSavedMessage] = useState<string | null>(null);
+  const [showFullMap, setShowFullMap] = useState(false);
 
-  // Use mock data or fallback to userProfile
-  const displayName = userProfile?.displayName?.toUpperCase() || MOCK_ASSET.farmerName;
-  const pucCode = userProfile?.farmerId || MOCK_ASSET.pucCode;
-  const center: [number, number] = userGPS
-    ? [userGPS.lat, userGPS.lng]
-    : [MOCK_ASSET.gpsCoordinates.lat, MOCK_ASSET.gpsCoordinates.lng];
+  const handleComplete = (status: 'safe' | 'warning' | 'legal_risk' | 'violation' | 'drawing' | 'scanning', geojson: any) => {
+    localStorage.setItem('eudr_status', status);
+    localStorage.setItem('eudr_timestamp', new Date().toISOString());
+    localStorage.setItem('eudr_geojson', JSON.stringify(geojson));
 
-  // QR Code URL
-  const qrCodeData = `COFFEELINK:${pucCode}:${displayName}`;
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCodeData)}&bgcolor=000000&color=FFFFFF`;
-
-  // Handle save from FarmMapEditor
-  const handleSaveFarmBoundary = useCallback((newPolygon: number[][]) => {
-    setFarmPolygon(newPolygon);
-    setIsEditMode(false);
-    setSavedMessage('Ranh giới vườn đã được lưu thành công!');
-
-    // Clear the saved message after 3 seconds
-    setTimeout(() => {
-      setSavedMessage(null);
-    }, 3000);
-
-    // TODO: Save to Firebase here
-    console.log('Saved farm boundary:', newPolygon);
-  }, []);
-
-  // Handle cancel from FarmMapEditor
-  const handleCancelEdit = useCallback(() => {
-    setIsEditMode(false);
-  }, []);
-
-  // Get User's Live GPS Location (mobile-friendly, single-shot with fallback)
-  useEffect(() => {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setGpsError('GPS not supported');
-      setUserGPS(MOCK_ASSET.gpsCoordinates);
-      return;
+    if (status === 'safe' || status === 'warning') {
+      setIsVerified(true);
+      setTimeout(() => setShowFullMap(false), 2000);
     }
+  };
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        setUserGPS({ lat: latitude, lng: longitude });
-        setGpsError(null);
+  const handleSupport = () => {
+    window.open('tel:1900123456');
+  };
 
-        // Check if user is inside farm polygon using Turf.js
-        const point = turf.point([longitude, latitude]);
-        const polygon = turf.polygon([farmPolygon.map(coord => [coord[1], coord[0]])]);
-        const inside = turf.booleanPointInPolygon(point, polygon);
-        setIsInsideFarm(inside);
-      },
-      (error) => {
-        console.error('GPS Error:', error);
-        setGpsError('GPS unavailable');
-        // Fallback to mock coordinates
-        setUserGPS(MOCK_ASSET.gpsCoordinates);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 7000,
-        maximumAge: 0
-      }
-    );
-  }, [farmPolygon]); // Re-run when farmPolygon changes
-
+  const handleLogout = () => {
+    if (confirm('Bạn có chắc muốn đăng xuất?')) {
+      localStorage.clear();
+      navigate('/login');
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] pb-28 font-sans overflow-y-auto">
-
-      {/* ═══════════════════════════════════════════════════════════════════════ */}
-      {/* LAYER 1: "SATELLITE SENTINEL" (Map + Live GPS + EUDR Badges) */}
-      {/* ═══════════════════════════════════════════════════════════════════════ */}
-      <section className="relative px-4 pt-6 pb-4">
-        <div className="max-w-xl mx-auto">
-          {/* Map Title Overlay */}
-          <div className="mb-3 flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-black uppercase tracking-wider text-white/90">
-                🛰️ Vùng Canh Tác
-              </h2>
-              <p className="text-[10px] font-medium text-white/50 tracking-wide">
-                Satellite View • Real-time Boundary
-              </p>
-            </div>
-            {gpsError && (
-              <span className="text-[10px] font-semibold text-amber-400">
-                GPS tạm thời không khả dụng
-              </span>
-            )}
-          </div>
-
-          {/* Success Message Toast */}
-          {savedMessage && (
-            <div
-              className="mb-3 p-3 rounded-xl flex items-center gap-2 animate-pulse"
-              style={{
-                background: 'rgba(0, 255, 148, 0.15)',
-                border: '1px solid rgba(0, 255, 148, 0.5)',
-              }}
-            >
-              <span className="text-sm font-bold text-[#00FF94]">✓ {savedMessage}</span>
-            </div>
-          )}
-
-          {/* The Map Container - Switches between View and Edit modes */}
-          <div
-            className="relative overflow-hidden shadow-2xl"
-            style={{
-              borderRadius: '20px',
-              border: isEditMode ? '2px solid #FFD700' : '2px solid #064E3B',
-              boxShadow: isEditMode
-                ? '0 0 40px rgba(255, 215, 0, 0.4), 0 20px 60px rgba(0, 0, 0, 0.8)'
-                : '0 0 40px rgba(0, 255, 148, 0.3), 0 20px 60px rgba(0, 0, 0, 0.8)'
-            }}
-          >
-            <div className="relative h-96 w-full bg-[#064E3B]">
-              <Suspense fallback={<MapPlaceholder />}>
-                {isEditMode ? (
-                  <FarmMapEditor
-                    center={center}
-                    initialPolygon={farmPolygon}
-                    markerPosition={
-                      userGPS
-                        ? [userGPS.lat, userGPS.lng]
-                        : [MOCK_ASSET.gpsCoordinates.lat, MOCK_ASSET.gpsCoordinates.lng]
-                    }
-                    onSave={handleSaveFarmBoundary}
-                    onCancel={handleCancelEdit}
-                  />
-                ) : (
-                  <FarmMap
-                    center={center}
-                    farmPolygon={farmPolygon}
-                    markerPosition={
-                      userGPS
-                        ? [userGPS.lat, userGPS.lng]
-                        : [MOCK_ASSET.gpsCoordinates.lat, MOCK_ASSET.gpsCoordinates.lng]
-                    }
-                  />
-                )}
-              </Suspense>
-
-              {/* Only show these overlays in view mode - FarmMapEditor has its own controls */}
-              {!isEditMode && (
-                <>
-                  {/* 📡 LIVE GPS Badge - Top Left (Animated Pulse) */}
-                  <div
-                    className="absolute top-3 left-3 px-3 py-2 rounded-xl flex items-center gap-2 z-10 animate-pulse"
-                    style={{
-                      background: 'rgba(6, 78, 59, 0.90)',
-                      backdropFilter: 'blur(12px)',
-                      border: '1.5px solid rgba(0, 255, 148, 0.6)',
-                      boxShadow: '0 0 20px rgba(0, 255, 148, 0.4)'
-                    }}
-                  >
-                    <MapPin className="h-4 w-4" style={{ color: '#00FF94' }} />
-                    <span className="text-[11px] font-black uppercase tracking-wide text-white">
-                      📡 LIVE GPS
-                    </span>
-                  </div>
-
-                  {/* 🛡️ EUDR VERIFIED Badge - Top Right (Dynamic based on location) */}
-                  <div
-                    className="absolute top-3 right-3 px-3 py-2 rounded-xl flex items-center gap-2 z-10"
-                    style={{
-                      background: isInsideFarm
-                        ? 'rgba(6, 78, 59, 0.85)'
-                        : 'rgba(120, 0, 0, 0.85)',
-                      backdropFilter: 'blur(12px)',
-                      border: isInsideFarm
-                        ? '1.5px solid rgba(0, 255, 148, 0.6)'
-                        : '1.5px solid rgba(255, 0, 0, 0.6)',
-                      boxShadow: isInsideFarm
-                        ? '0 0 20px rgba(0, 255, 148, 0.4)'
-                        : '0 0 20px rgba(255, 0, 0, 0.4)'
-                    }}
-                  >
-                    {isInsideFarm ? (
-                      <>
-                        <ShieldCheck className="h-4 w-4" style={{ color: '#00FF94' }} />
-                        <span className="text-[11px] font-black uppercase tracking-wide text-white">
-                          🛡️ EUDR VERIFIED
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertTriangle className="h-4 w-4" style={{ color: '#FF4444' }} />
-                        <span className="text-[11px] font-black uppercase tracking-wide text-white">
-                          ⚠️ OUTSIDE ZONE
-                        </span>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Bottom Info Overlay - Area, Trees & GPS Coordinates */}
-                  <div
-                    className="absolute bottom-0 left-0 right-0 p-4 z-10"
-                    style={{
-                      background: 'linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, transparent 100%)'
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: '#00FF94' }}>
-                          Diện tích & Số cây
-                        </p>
-                        <p className="text-xl font-black text-white tracking-tight">
-                          {MOCK_ASSET.area} Ha • {MOCK_ASSET.treeCount.toLocaleString()} Gốc
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: '#00FF94' }}>
-                          GPS Coordinates
-                        </p>
-                        <p className="text-xs font-mono font-black text-white">
-                          {userGPS ? `${userGPS.lat.toFixed(4)}°N` : '—'}
-                        </p>
-                        <p className="text-xs font-mono font-black text-white">
-                          {userGPS ? `${userGPS.lng.toFixed(4)}°E` : '—'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Edit Boundary Button */}
-                  <button
-                    onClick={() => setIsEditMode(true)}
-                    className="absolute bottom-4 right-4 z-20 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wide transition-all duration-300 hover:scale-105"
-                    style={{
-                      background: 'linear-gradient(135deg, #064E3B 0%, #000 100%)',
-                      border: '2px solid #FFD700',
-                      color: '#FFD700',
-                      boxShadow: '0 0 15px rgba(255, 215, 0, 0.3), 0 4px 12px rgba(0,0,0,0.5)'
-                    }}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                    Vẽ Ranh Giới
-                  </button>
-
-                  {/* Smart Farm Setup Button */}
-                  <button
-                    onClick={() => navigate('/farm-setup')}
-                    className="absolute bottom-4 left-4 z-20 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wide transition-all duration-300 hover:scale-105"
-                    style={{
-                      background: 'linear-gradient(135deg, #00FF94 0%, #00CC77 100%)',
-                      border: 'none',
-                      color: '#000',
-                      boxShadow: '0 0 20px rgba(0, 255, 148, 0.4), 0 4px 12px rgba(0,0,0,0.5)'
-                    }}
-                  >
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Khởi Tạo Mới
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════════════════ */}
-      {/* LAYER 2: "COMPLIANCE PASSPORT" (Black Card + Deforestation Check) */}
-      {/* ═══════════════════════════════════════════════════════════════════════ */}
-      <section className="px-4 py-4">
-        <div className="max-w-xl mx-auto">
-          <div
-            className="relative overflow-hidden p-8 text-white transform transition-all duration-300 hover:scale-[1.02]"
-            style={{
-              background: 'linear-gradient(135deg, #000000 0%, #064E3B 50%, #0a0a0a 100%)',
-              borderRadius: '20px',
-              boxShadow: '0 30px 90px rgba(0, 0, 0, 0.9), 0 0 60px rgba(0, 255, 148, 0.15)'
-            }}
-          >
-            {/* Noise Texture Overlay */}
-            <div
-              className="absolute inset-0 opacity-10 mix-blend-overlay pointer-events-none"
-              style={{
-                backgroundImage: 'url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbHRlcj0idXJsKCNhKSIgb3BhY2l0eT0iMC4wNSIvPjwvc3ZnPg==)'
-              }}
-            ></div>
-
-            {/* Glowing Orbs */}
-            <div
-              className="absolute -top-20 -right-20 h-48 w-48 rounded-full blur-3xl opacity-30 pointer-events-none"
-              style={{ background: '#00FF94' }}
-            ></div>
-            <div
-              className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full blur-3xl opacity-20 pointer-events-none"
-              style={{ background: '#FFD700' }}
-            ></div>
-
-            <div className="relative z-10">
-              {/* Card Header */}
-              <div className="flex items-start justify-between mb-8">
-                <div>
-                  <p
-                    className="text-[9px] font-black uppercase mb-1 tracking-[0.25em]"
-                    style={{ color: '#FFD700' }}
-                  >
-                    Digital Asset Card
-                  </p>
-                  <p className="text-xs font-black uppercase tracking-widest text-white/80">
-                    CoffeeLink Agri-OS
-                  </p>
-                </div>
-                <div
-                  className="px-2.5 py-1.5 rounded-lg"
-                  style={{
-                    background: 'rgba(0, 255, 148, 0.15)',
-                    border: '1px solid rgba(0, 255, 148, 0.4)',
-                    backdropFilter: 'blur(8px)'
-                  }}
-                >
-                  <span className="text-[9px] font-black uppercase" style={{ color: '#00FF94' }}>
-                    ✓ VERIFIED
-                  </span>
-                </div>
-              </div>
-
-              {/* Farmer Name - EMBOSSED STYLE */}
-              <div className="mb-8">
-                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/40 mb-2">
-                  Chủ Vườn / Farmer
-                </p>
-                <h1
-                  className="text-3xl font-black tracking-tight leading-none"
-                  style={{
-                    color: '#FFFFFF',
-                    textShadow: '2px 2px 4px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 215, 0, 0.3)',
-                    letterSpacing: '0.05em'
-                  }}
-                >
-                  {displayName}
-                </h1>
-              </div>
-
-              {/* PUC Code - EMBOSSED GOLD */}
-              <div className="mb-8">
-                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/40 mb-2">
-                  PUC Code (Mã Vùng Trồng)
-                </p>
-                <p
-                  className="text-xl font-mono font-black tracking-[0.15em]"
-                  style={{
-                    color: '#FFD700',
-                    textShadow: '1px 1px 2px rgba(0, 0, 0, 0.9), 0 0 15px rgba(255, 215, 0, 0.5)',
-                    fontVariant: 'small-caps'
-                  }}
-                >
-                  {pucCode}
-                </p>
-              </div>
-
-              {/* NEW: Deforestation Compliance Check */}
-              <div
-                className="mb-8 p-4 rounded-xl"
-                style={{
-                  background: 'rgba(0, 255, 148, 0.1)',
-                  border: '1px solid rgba(0, 255, 148, 0.3)'
-                }}
-              >
-                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/50 mb-2">
-                  EUDR Compliance Status
-                </p>
-                <div className="flex items-center gap-3">
-                  <ShieldCheck className="h-6 w-6" style={{ color: '#00FF94' }} />
-                  <div>
-                    <p
-                      className="text-base font-black tracking-wide"
-                      style={{ color: '#00FF94' }}
-                    >
-                      Deforestation Check (2020): ✅ PASSED
-                    </p>
-                    <p className="text-[10px] text-white/50 mt-1">
-                      Verified: {MOCK_ASSET.complianceCheck.verifiedAt} • {MOCK_ASSET.complianceCheck.certification}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* QR Code Footer */}
-              <div
-                className="flex items-end justify-between pt-5"
-                style={{ borderTop: '1px solid rgba(255, 255, 255, 0.15)' }}
-              >
-                <div className="flex-1">
-                  <p className="text-[9px] font-bold uppercase tracking-wide text-white/50 mb-1">
-                    Quét để xác thực
-                  </p>
-                  <p className="text-[8px] font-medium text-white/30">
-                    Scan to verify authenticity
-                  </p>
-                </div>
-                <div
-                  className="p-2.5 rounded-xl"
-                  style={{
-                    background: '#FFFFFF',
-                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)'
-                  }}
-                >
-                  <img
-                    src={qrCodeUrl}
-                    alt="QR Code"
-                    className="h-20 w-20"
-                    style={{ display: 'block' }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════════════════ */}
-      {/* LAYER 3: "ASSET VALUATION" (Harvest Value + Trend Graph) */}
-      {/* ═══════════════════════════════════════════════════════════════════════ */}
-      <section className="px-4 py-4">
-        <div className="max-w-xl mx-auto">
-          <div
-            className="p-7"
-            style={{
-              background: 'linear-gradient(to bottom right, #FFFFFF 0%, #F5F5F5 100%)',
-              borderRadius: '20px',
-              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4), 0 0 1px rgba(0, 0, 0, 0.1)',
-              border: '1px solid rgba(0, 0, 0, 0.05)'
-            }}
-          >
-            {/* Header with Trend */}
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-black uppercase tracking-[0.15em] text-gray-500">
-                Định giá vườn
-              </p>
-              <div
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
-                style={{
-                  background: 'rgba(0, 255, 148, 0.1)',
-                  border: '1px solid rgba(0, 255, 148, 0.3)'
-                }}
-              >
-                <TrendingUp className="h-3.5 w-3.5" style={{ color: '#00FF94' }} />
-                <span className="text-xs font-black" style={{ color: '#00FF94' }}>
-                  📈 +{MOCK_ASSET.trend}% (7d)
-                </span>
-              </div>
-            </div>
-
-            {/* Main Valuation with Sparkline */}
-            <div className="flex items-end justify-between mb-3">
-              <p
-                className="text-4xl font-black tracking-tight"
-                style={{
-                  color: '#00FF94',
-                  textShadow: '0 2px 8px rgba(0, 255, 148, 0.2)'
-                }}
-              >
-                {MOCK_ASSET.valuation.toLocaleString('vi-VN')} VND
-              </p>
-              <SparklineChart data={MOCK_ASSET.priceHistory} />
-            </div>
-
-            {/* Disclaimer */}
-            <p className="text-[11px] font-medium text-gray-400 leading-relaxed">
-              Định giá dựa trên dữ liệu sàn London & Sản lượng dự kiến.
-            </p>
-            <p className="text-[10px] font-medium text-gray-300 mt-1.5 italic">
-              *Giá trị thay đổi theo thị trường quốc tế
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Version Info */}
-      <div className="text-center pb-6 pt-4 opacity-30">
-        <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
-          CoffeeLink Agri-OS
-        </p>
-        <p className="text-[9px] text-white/40">
-          Phiên bản 2.1.0 (Premium Edition)
-        </p>
+    <div className="min-h-screen pb-20 relative overflow-hidden">
+      {/* UNIFIED GRADIENT BACKGROUND - matching other tabs */}
+      {/* PREMIUM DYNAMIC BACKGROUND */}
+      <div className="fixed inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-b from-emerald-600 via-green-500 to-green-50" />
+        {/* Animated orbs for depth */}
+        <div className="absolute top-[-10%] right-[-10%] w-[80%] h-[40%] bg-white/20 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[20%] left-[-20%] w-[60%] h-[40%] bg-emerald-400/20 rounded-full blur-[100px]" />
+        <div className="absolute top-[40%] right-0 w-32 h-32 bg-yellow-200/10 rounded-full blur-[80px]" />
       </div>
 
-      <BottomNav />
+      {/* Max-width container for mobile-like appearance */}
+      <div className="max-w-md mx-auto min-h-screen relative z-10">
+
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {/* PREMIUM HEADER */}
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        <div className="relative px-6 pt-12 pb-24 overflow-hidden">
+          <div className="relative z-10">
+            {/* Header Top row */}
+            <div className="flex items-center justify-between mb-8">
+              <h1 className="text-white text-2xl font-black tracking-tight">Cá Nhân</h1>
+              <div className="bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-2xl border border-white/20">
+                <span className="text-white text-[10px] font-bold uppercase tracking-widest">Farmer Passport</span>
+              </div>
+            </div>
+
+            {/* Profile Info Card - Minimalist Glassmorphism */}
+            <div className="flex items-center gap-5">
+              {/* Avatar with Ring */}
+              <div className="relative group">
+                <div className="w-24 h-24 rounded-[32px] overflow-hidden ring-4 ring-white shadow-2xl transition-transform duration-500 group-hover:scale-105">
+                  <img
+                    src={FARMER_DATA.avatar}
+                    alt="Avatar"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {/* Online indicator */}
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-4 border-emerald-600 shadow-lg" />
+              </div>
+
+              {/* Name & Title */}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h2 className="text-white text-2xl font-black">{FARMER_DATA.displayName}</h2>
+                  <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                </div>
+                <p className="text-white/80 text-sm font-semibold tracking-wide uppercase">{FARMER_DATA.name}</p>
+                <div className="mt-3 flex items-center gap-3">
+                  <div className="flex items-center gap-1 text-emerald-100 bg-emerald-700/30 px-2 py-0.5 rounded-lg border border-emerald-400/20">
+                    <span className="text-[10px] font-bold">VIP FARMER</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-white/60">
+                    <MapPin className="w-3 h-3" />
+                    <span className="text-[11px] font-medium">Gia Lai, VN</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {/* FEATURE CARDS GRID */}
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        <div className="px-6 -mt-16 relative z-20 mb-8">
+          {/* EUDR Verification Premium Card */}
+          <button
+            onClick={() => setShowFullMap(true)}
+            className="w-full relative overflow-hidden group bg-white rounded-[32px] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.1)] hover:shadow-[0_30px_60px_rgba(0,0,0,0.15)] active:scale-[0.98] transition-all duration-500 border border-white/50"
+          >
+            {/* Background Accent */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl transform translate-x-10 -translate-y-10 group-hover:bg-blue-500/10 transition-colors" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl transform -translate-x-10 translate-y-10 group-hover:bg-emerald-500/10 transition-colors" />
+
+            <div className="flex items-center gap-6 relative z-10">
+              {/* Icon with animated glass effect */}
+              <div className="relative">
+                <div className="w-18 h-18 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform duration-500 p-4">
+                  <Shield className="w-full h-full text-white" strokeWidth={2.5} />
+                </div>
+                {/* Status indicator pulse */}
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-pulse" />
+              </div>
+
+              {/* Text Info */}
+              <div className="flex-1 text-left">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="text-gray-900 font-extrabold text-xl tracking-tight">Xác Thực</h3>
+                  <div className="bg-blue-50 px-3 py-1 rounded-full">
+                    <span className="text-blue-600 text-[10px] font-black uppercase tracking-wider">Tình trạng: An toàn</span>
+                  </div>
+                </div>
+                <p className="text-gray-500 text-sm font-medium leading-tight mb-2">
+                  Tiêu chuẩn EUDR & Truy xuất nguồn gốc
+                </p>
+                <div className="flex items-center gap-2 text-emerald-600">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span className="text-[11px] font-bold">Dữ liệu đã được đồng bộ 2026</span>
+                </div>
+              </div>
+
+              {/* Action Indicator */}
+              <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-blue-50 group-hover:text-blue-600 transition-all">
+                <Globe className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+              </div>
+            </div>
+          </button>
+        </div>
+
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {/* SETTINGS SECTION */}
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        <div className="px-6">
+          <h3 className="text-gray-900 font-bold text-lg mb-4">Cài Đặt</h3>
+
+          <div className="bg-white rounded-3xl shadow-lg overflow-hidden divide-y divide-gray-100">
+            {/* Profile Settings */}
+            <button className="w-full px-5 py-4 flex items-center gap-4 hover:bg-gray-50 active:bg-gray-100 transition-colors">
+              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                <span className="text-xl">👤</span>
+              </div>
+              <div className="flex-1 text-left">
+                <div className="text-gray-900 font-semibold text-sm">Thông Tin Cá Nhân</div>
+                <div className="text-gray-500 text-xs">Chỉnh sửa hồ sơ</div>
+              </div>
+              <span className="text-gray-400">→</span>
+            </button>
+
+            {/* Privacy */}
+            <button className="w-full px-5 py-4 flex items-center gap-4 hover:bg-gray-50 active:bg-gray-100 transition-colors">
+              <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                <span className="text-xl">🔒</span>
+              </div>
+              <div className="flex-1 text-left">
+                <div className="text-gray-900 font-semibold text-sm">Bảo Mật</div>
+                <div className="text-gray-500 text-xs">Quyền riêng tư</div>
+              </div>
+              <span className="text-gray-400">→</span>
+            </button>
+
+            {/* Language */}
+            <button className="w-full px-5 py-4 flex items-center gap-4 hover:bg-gray-50 active:bg-gray-100 transition-colors">
+              <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                <span className="text-xl">🌐</span>
+              </div>
+              <div className="flex-1 text-left">
+                <div className="text-gray-900 font-semibold text-sm">Ngôn Ngữ</div>
+                <div className="text-gray-500 text-xs">Tiếng Việt</div>
+              </div>
+              <span className="text-gray-400">→</span>
+            </button>
+
+            {/* About */}
+            <button className="w-full px-5 py-4 flex items-center gap-4 hover:bg-gray-50 active:bg-gray-100 transition-colors">
+              <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                <span className="text-xl">ℹ️</span>
+              </div>
+              <div className="flex-1 text-left">
+                <div className="text-gray-900 font-semibold text-sm">Về Ứng Dụng</div>
+                <div className="text-gray-500 text-xs">Phiên bản 1.0.0</div>
+              </div>
+              <span className="text-gray-400">→</span>
+            </button>
+          </div>
+        </div>
+
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {/* LOGOUT BUTTON */}
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        <div className="px-6 mt-6">
+          <button
+            onClick={handleLogout}
+            className="w-full bg-gradient-to-r from-red-500 to-orange-500 rounded-2xl p-4 flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] transition-transform"
+          >
+            <LogOut className="w-6 h-6 text-white" strokeWidth={2.5} />
+            <span className="text-white text-lg font-bold">Đăng Xuất</span>
+          </button>
+        </div>
+
+        {/* Bottom spacing */}
+        <div className="h-6"></div>
+
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {/* FULLSCREEN MAP OVERLAY */}
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {showFullMap && (
+          <div className="fixed inset-0 z-[9999] bg-slate-900">
+            <div className="absolute top-4 right-4 z-[10000]">
+              <button
+                onClick={() => setShowFullMap(false)}
+                className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center text-white shadow-2xl"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="w-full h-full">
+              <Suspense fallback={<MapPlaceholder />}>
+                <EudrCheckFeature
+                  onComplete={handleComplete}
+                  onCancel={() => setShowFullMap(false)}
+                  farmerName={FARMER_DATA.displayName}
+                  farmId="CF-GL-2026-889"
+                />
+              </Suspense>
+            </div>
+          </div>
+        )}
+
+
+      </div>
     </div>
   );
 };

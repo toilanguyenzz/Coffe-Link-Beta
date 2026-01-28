@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/DemoAuthContext';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getDistanceFromLatLonInMeters } from '../utils/geoUtils';
@@ -64,7 +64,7 @@ export const useProofOfWork = () => {
         async (position) => {
           const currentLat = position.coords.latitude;
           const currentLng = position.coords.longitude;
-          
+
           // 1. Verify GPS (Anti-Cheat)
           const distance = getDistanceFromLatLonInMeters(
             currentLat,
@@ -76,10 +76,10 @@ export const useProofOfWork = () => {
           // Allow slight buffer or Dev mode override if needed, strict for Prod
           if (distance > MAX_DISTANCE_METERS) {
             setLoading(false);
-            resolve({ 
-              success: false, 
+            resolve({
+              success: false,
               message: `CẢNH BÁO: Bạn đang cách vườn ${Math.round(distance)}m. Vui lòng ra vườn để check-in!`,
-              distance 
+              distance
             });
             return;
           }
@@ -98,7 +98,7 @@ export const useProofOfWork = () => {
               // Check if logged yesterday
               const yesterdayDate = new Date();
               yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-              
+
               const yYear = yesterdayDate.getFullYear();
               const yMonth = String(yesterdayDate.getMonth() + 1).padStart(2, '0');
               const yDay = String(yesterdayDate.getDate()).padStart(2, '0');
@@ -130,9 +130,9 @@ export const useProofOfWork = () => {
 
             await refreshProfile(); // Sync local state
             setLoading(false);
-            
-            resolve({ 
-              success: true, 
+
+            resolve({
+              success: true,
               message: streakUpdated ? `Check-in thành công! Chuỗi +1 ngày.` : `Hôm nay bác đã điểm danh rồi. Hẹn mai nhé!`,
               streakUpdated,
               newStreak: newCurrent,
