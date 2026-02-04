@@ -6,6 +6,8 @@ import { ToolsProvider } from './contexts/ToolsContext';
 import { DiaryProvider } from './contexts/DiaryContext';
 import { FarmDataProvider } from './contexts/FarmDataContext';
 import { ReminderProvider } from './contexts/ReminderContext';
+import { GreenPointsProvider } from './contexts/GreenPointsContext';
+import { MascotProvider } from './contexts/MascotContext';
 
 // Pages
 import DemoLogin from './pages/auth/DemoLogin';
@@ -124,19 +126,22 @@ export default function DemoApp() {
                     <DiaryProvider>
                         <FarmDataProvider>
                             <ReminderProvider>
-                                {/* Global Components */}
-                                <ReminderToast />
-                                <WeatherAlertBanner />
+                                <GreenPointsProvider>
+                                    <MascotProvider>
+                                        {/* Global Components */}
+                                        <ReminderToast />
+                                        <WeatherAlertBanner />
 
+                                        <Router>
+                                            <Routes>
+                                                <Route path="/login" element={<DemoLogin />} />
 
-                                <Router>
-                                    <Routes>
-                                        <Route path="/login" element={<DemoLogin />} />
-
-                                        {/* Main Role-Based Gateway */}
-                                        <Route path="/*" element={<RoleBasedDemoRoutes />} />
-                                    </Routes>
-                                </Router>
+                                                {/* Main Role-Based Gateway */}
+                                                <Route path="/*" element={<RoleBasedDemoRoutes />} />
+                                            </Routes>
+                                        </Router>
+                                    </MascotProvider>
+                                </GreenPointsProvider>
                             </ReminderProvider>
                         </FarmDataProvider>
                     </DiaryProvider>

@@ -10,6 +10,8 @@ export type ProductCategory =
     | 'FERTILIZER'     // Phân bón
     | 'COMPOST'        // Phân hữu cơ
     | 'WOOD'           // Cành/Củi
+    | 'SEEDLING'       // Cây giống
+    | 'EQUIPMENT'      // Dụng cụ/Thiết bị
     | 'OTHER';         // Khác
 
 // Listing status workflow
@@ -32,7 +34,7 @@ export interface ProductListing {
     title: string;
     description?: string;
     estimatedWeight: number;      // Number value
-    weightUnit: 'kg' | 'tan';     // 1 tan = 1000kg
+    weightUnit: string;           // Flexible unit (kg, tan, cay, m, lit...)
     pricePerUnit?: number;        // Optional price (VND)
     negotiable: boolean;          // "Thỏa thuận" flag
 
@@ -92,6 +94,8 @@ export const PRODUCT_CATEGORIES: CategoryConfig[] = [
     { id: 'FERTILIZER', label: 'Phân bón', icon: '🌱', color: '#228B22' },
     { id: 'COMPOST', label: 'Phân hữu cơ', icon: '♻️', color: '#2E8B57' },
     { id: 'WOOD', label: 'Cành/Củi', icon: '🪵', color: '#A0522D' },
+    { id: 'SEEDLING', label: 'Cây giống', icon: '🌱', color: '#8FBC8F' },
+    { id: 'EQUIPMENT', label: 'Dụng cụ', icon: '🔧', color: '#4682B4' },
     { id: 'OTHER', label: 'Khác', icon: '📦', color: '#708090' },
 ];
 

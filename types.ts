@@ -136,6 +136,7 @@ export interface Deal {
   brand?: string;
   unit?: string;
   expiryTime?: string;
+  productImage?: string;
   createdAt?: any;
 }
 
@@ -248,6 +249,12 @@ export interface Campaign {
   type?: CampaignType;             // INPUT | LABOR | OUTPUT
   totalParticipants?: number;      // Số người tham gia
   savingsPerUnit?: number;         // Tiết kiệm/đơn vị so với giá thị trường
+
+  // Dynamic Pricing Tiers (New for Unicorn Strategy)
+  pricingTiers?: {
+    minQuantity: number;
+    price: number;
+  }[];
 
   createdAt: any;
   updatedAt?: any;

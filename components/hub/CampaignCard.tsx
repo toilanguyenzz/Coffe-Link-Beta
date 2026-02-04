@@ -112,21 +112,85 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign: initialCampaign, 
                     </span>
                 </div>
 
-                {/* Progress Bar */}
-                <div style={{ marginBottom: 12 }}>
-                    <div style={{
-                        height: 8,
-                        background: '#e5e7eb',
-                        borderRadius: 4,
-                        overflow: 'hidden'
-                    }}>
-                        <div style={{
-                            height: '100%',
-                            width: `${progress}%`,
-                            background: isFulfilled ? '#16a34a' : 'linear-gradient(90deg, #f59e0b, #eab308)',
-                            transition: 'width 0.5s ease-out'
-                        }} />
+                {/* Dynamic Pricing Tiers Visualization */}
+                <div style={{ marginBottom: 16 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Tiến độ gom đơn</span>
+                        {campaign.pricingTiers && (
+                            <span style={{ fontSize: 12, fontWeight: 700, color: '#dc2626' }}>
+                                Mục tiêu: {campaign.pricingTiers[campaign.pricingTiers.length - 1].price.toLocaleString()}đ
+                            </span>
+                        )}
                     </div>
+
+                    <div style={{
+                        position: 'relative',
+                        height: 24,
+                        background: '#f3f4f6',
+                        borderRadius: 12,
+                        marginTop: 4,
+                        marginBottom: 8,
+                        overflow: 'hidden' // Ensure bar stays inside
+                    }}>
+                        {/* Progress Fill */}
+                        <div style={{
+                            position: 'absolute',
+                            left: 0,
+                            top: 0,
+                            bottom: 0,
+                            width: `${progress}%`,
+                            background: 'linear-gradient(90deg, #f59e0b, #ea580c)',
+                            borderRadius: 12,
+                            transition: 'width 0.5s ease-out',
+                            zIndex: 1
+                        }} />
+
+                        {/* Tiers Markers */}
+                        {campaign.pricingTiers?.map((tier, index) => {
+                            const tierPos = Math.min((tier.minQuantity / campaign.targetQuantity) * 100, 100);
+                            const isUnlocked = campaign.currentQuantity >= tier.minQuantity;
+
+                            return (
+                                <div key={index} style={{
+                                    position: 'absolute',
+                                    left: `${tierPos}%`,
+                                    top: 0,
+                                    bottom: 0,
+                                    width: 2,
+                                    background: 'white',
+                                    zIndex: 2,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center'
+                                }}>
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: 26,
+                                        transform: 'translateX(-50%)',
+                                        fontSize: 10,
+                                        fontWeight: isUnlocked ? 700 : 500,
+                                        color: isUnlocked ? '#ea580c' : '#9ca3af',
+                                        whiteSpace: 'nowrap'
+                                    }}>
+                                        {tier.minQuantity} {campaign.unit}
+                                        <br />
+                                        {tier.price.toLocaleString()}đ
+                                    </div>
+                                    {isUnlocked && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: -6,
+                                            color: '#ea580c',
+                                            fontSize: 10
+                                        }}>▼</div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div style={{ height: 20 }}></div> {/* Space for tier labels */}
+
                     <div style={{
                         display: 'flex',
                         justifyContent: 'space-between',
@@ -134,8 +198,8 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign: initialCampaign, 
                         fontSize: 12,
                         color: '#666'
                     }}>
-                        <span>Đã đặt: {campaign.currentQuantity}/{campaign.targetQuantity} {campaign.unit}</span>
-                        {!isFulfilled && <span style={{ color: '#f59e0b', fontWeight: 500 }}>Còn thiếu {remaining}</span>}
+                        <span>Đã gom: <b>{campaign.currentQuantity}</b>/{campaign.targetQuantity} {campaign.unit}</span>
+                        {!isFulfilled && <span style={{ color: '#ea580c', fontWeight: 600 }}>Cần thêm {remaining} để chốt giá tốt!</span>}
                     </div>
                 </div>
 

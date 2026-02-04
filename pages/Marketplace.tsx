@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Search, Loader2, RefreshCw, ShoppingBag, Recycle, Leaf } from 'lucide-react';
 
 // import MarketplaceHeader from '../components/marketplace/MarketplaceHeader'; // Removed
@@ -48,7 +49,10 @@ const DEMO_LISTINGS: ProductListing[] = [
         estimatedWeight: 2,
         weightUnit: 'tan',
         negotiable: true,
-        images: ['https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400'],
+        images: [
+            'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=500&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1550989460-0adf9ea622e2?w=500&auto=format&fit=crop'
+        ],
         originalImages: [],
         location: { lat: 13.9833, lng: 108.0, address: 'Chư Sê, Gia Lai', distanceKm: 2.1 },
         status: 'APPROVED',
@@ -68,7 +72,10 @@ const DEMO_LISTINGS: ProductListing[] = [
         weightUnit: 'kg',
         pricePerUnit: 800000,
         negotiable: false,
-        images: ['https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400'],
+        images: [
+            'https://images.unsplash.com/photo-1628088062854-d1870b4553da?w=500&auto=format&fit=crop',
+            'https://plus.unsplash.com/premium_photo-1664302152998-1c448bbdd2a7?w=500&auto=format&fit=crop'
+        ],
         originalImages: [],
         location: { lat: 13.95, lng: 108.05, address: 'Ia Sao, Ia Grai', distanceKm: 5.3 },
         status: 'APPROVED',
@@ -88,7 +95,10 @@ const DEMO_LISTINGS: ProductListing[] = [
         weightUnit: 'tan',
         pricePerUnit: 300000,
         negotiable: true,
-        images: ['https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=400'],
+        images: [
+            'https://images.unsplash.com/photo-1543351611-58f69d7c1781?w=500&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1543352634-a1c51d9f1fa7?w=500&auto=format&fit=crop'
+        ],
         originalImages: [],
         location: { lat: 14.0, lng: 108.1, address: 'Chư Păh', distanceKm: 8.7 },
         status: 'APPROVED',
@@ -97,33 +107,93 @@ const DEMO_LISTINGS: ProductListing[] = [
         viewCount: 22,
         contactCount: 5,
     },
+    {
+        id: 'demo_4',
+        farmerId: 'demo_farmer_4',
+        farmerName: 'Cô Bảy',
+        farmerPhone: '0331234567',
+        category: 'SEEDLING', // Assuming this category exists or falls under existing
+        title: 'Giống bơ 034 ghép (50 cây)',
+        estimatedWeight: 50,
+        weightUnit: 'cay',
+        pricePerUnit: 45000,
+        negotiable: false,
+        images: [
+            'https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?w=500&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1601039641847-7857b994d704?w=500&auto=format&fit=crop'
+        ],
+        originalImages: [],
+        location: { lat: 13.9, lng: 108.2, address: 'Đak Đoa', distanceKm: 12.5 },
+        status: 'APPROVED',
+        createdAt: new Date(Date.now() - 4000000),
+        expiresAt: new Date(Date.now() + 65 * 3600000),
+        viewCount: 45,
+        contactCount: 8,
+    },
+    {
+        id: 'demo_5',
+        farmerId: 'demo_farmer_5',
+        farmerName: 'Chú Tư',
+        farmerPhone: '0998877665',
+        category: 'OTHER',
+        title: 'Ống nước cũ thanh lý (200m)',
+        estimatedWeight: 200,
+        weightUnit: 'm',
+        pricePerUnit: 2000,
+        negotiable: true,
+        images: [
+            'https://images.unsplash.com/photo-1563456075-802c61ce2005?w=500&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1610444654921-2a62817ee72f?w=500&auto=format&fit=crop'
+        ],
+        originalImages: [],
+        location: { lat: 14.1, lng: 107.9, address: 'Ia Grai', distanceKm: 4.2 },
+        status: 'APPROVED',
+        createdAt: new Date(Date.now() - 25000000),
+        expiresAt: new Date(Date.now() + 20 * 3600000),
+        viewCount: 12,
+        contactCount: 2,
+    }
 ];
 
 // Tab type
 type MarketTab = 'supplies' | 'byproducts';
 
 // Product images for deals
-const PRODUCT_IMAGES: Record<string, string> = {
-    'deal_1': 'https://down-vn.img.susercontent.com/file/vn-11134207-7r98o-lmr5c7l6qpzg68',
-    'deal_2': 'https://bizweb.dktcdn.net/100/006/093/products/neem-oil-1l.jpg?v=1586929488827',
-    'deal_3': 'https://cf.shopee.vn/file/d4a65204c5b25de097e5feb10c64e57d',
-    'deal_4': 'https://may-cat-co.vn/wp-content/uploads/2020/05/may-cat-co-honda-umk435.jpg',
-};
+// Product images for deals - MOVED TO HOOK (useDemoMarketplace.ts)
 
 const Marketplace: React.FC = () => {
     const { currentUser, userProfile } = useAuth();
     const { deals, loading: dealsLoading, reserveSlot } = useMarketplace();
 
-    // Tab state - NEW: Toggle between supplies (gom đơn) and by-products
-    const [activeTab, setActiveTab] = useState<MarketTab>('supplies');
+    const [searchParams] = useSearchParams();
+
+    // Tab state - Initialize from URL param or default
+    const [activeTab, setActiveTab] = useState<MarketTab>(() => {
+        const tabParam = searchParams.get('tab');
+        return (tabParam === 'supplies' || tabParam === 'byproducts') ? tabParam : 'supplies';
+    });
 
     // Modal states
     const [showListingModal, setShowListingModal] = useState(false);
     const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
 
-    // Search & Filter
-    const [searchQuery, setSearchQuery] = useState('');
+    // Search & Filter - Initialize from URL param
+    const [searchQuery, setSearchQuery] = useState(() => {
+        return searchParams.get('search') || '';
+    });
     const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
+
+    // Sync state if URL params change (e.g. navigation within app)
+    useEffect(() => {
+        const tabParam = searchParams.get('tab');
+        if (tabParam === 'supplies' || tabParam === 'byproducts') {
+            setActiveTab(tabParam);
+        }
+        const searchParam = searchParams.get('search');
+        if (searchParam) {
+            setSearchQuery(searchParam);
+        }
+    }, [searchParams]);
 
     // By-products data
     const [listings, setListings] = useState<ProductListing[]>(DEMO_LISTINGS);
@@ -410,7 +480,7 @@ const Marketplace: React.FC = () => {
                                                     <div className="relative w-24 h-24 flex-shrink-0">
                                                         <div className="w-full h-full rounded-xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 shadow-lg">
                                                             <img
-                                                                src={PRODUCT_IMAGES[deal.id] || 'https://via.placeholder.com/150'}
+                                                                src={deal.productImage || 'https://via.placeholder.com/150'}
                                                                 alt={deal.title}
                                                                 className="w-full h-full object-cover"
                                                             />

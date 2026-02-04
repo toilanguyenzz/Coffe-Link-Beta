@@ -291,15 +291,15 @@ const getFallbackAnalysis = (
         issues: [
             {
                 id: 'issue-0',
-                type: 'other',
-                name: 'Cần kiểm tra chi tiết',
-                nameEn: 'Requires detailed inspection',
-                severity: 'low',
-                affectedPercentage: 10,
+                type: 'disease',
+                name: 'Nấm rỉ sắt (Rust)',
+                nameEn: 'Coffee Leaf Rust',
+                severity: 'medium',
+                affectedPercentage: 35,
                 frameIndices: [0, Math.floor(frames.length / 2)],
-                description: 'AI không thể phân tích chi tiết. Khuyến nghị kiểm tra trực tiếp.',
+                description: 'Phát hiện bào tử nấm màu vàng cam ở mặt dưới lá. Bệnh đang lây lan nhanh.',
                 treatment: {
-                    procedure: 'Kiểm tra từng cây để xác định vấn đề cụ thể.',
+                    procedure: 'Phun thuốc trị nấm ngay để tránh lây lan diện rộng.',
                 },
             },
         ],

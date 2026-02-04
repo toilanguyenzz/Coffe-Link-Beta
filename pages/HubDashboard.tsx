@@ -13,6 +13,7 @@ import CampaignCard from '../components/hub/CampaignCard';
 import { getActiveCampaigns } from '../services/CampaignService';
 import { seedAndAssignToHub } from '../utils/seedMockData';
 import HubInviteModal from '../components/hub/HubInviteModal';
+import AgriTokFeed from '../components/hub/AgriTokFeed';
 import { Campaign } from '../types';
 import {
     MapPin,
@@ -379,6 +380,13 @@ const HubDashboard: React.FC = () => {
                             </div>
                         </div>
                     )}
+                </div>
+
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {/* AGRI-TOK FEED - NEW FEATURE */}
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                <div className="px-5 mb-6">
+                    <AgriTokFeed />
                 </div>
 
                 {/* ═══════════════════════════════════════════════════════════════ */}

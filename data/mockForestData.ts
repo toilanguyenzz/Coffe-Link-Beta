@@ -168,7 +168,8 @@ export const calculateOverlapArea = (
 ): number => {
     try {
         const intersection = turf.intersect(
-            turf.featureCollection([userPolygon, zone])
+            userPolygon as any,
+            zone as any
         );
         if (intersection) {
             return turf.area(intersection);

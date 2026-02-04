@@ -498,7 +498,8 @@ const EudrCheckFeature: React.FC<EudrCheckFeatureProps> = ({
 
             try {
                 const jrcIntersection = turf.intersect(
-                    turf.featureCollection([userPolygon, mockJRCZone])
+                    userPolygon as any,
+                    mockJRCZone as any
                 );
                 if (jrcIntersection) {
                     jrcOverlap = true;
@@ -522,7 +523,8 @@ const EudrCheckFeature: React.FC<EudrCheckFeatureProps> = ({
 
             try {
                 const vnIntersection = turf.intersect(
-                    turf.featureCollection([userPolygon, mockVNZone])
+                    userPolygon as any,
+                    mockVNZone as any
                 );
                 if (vnIntersection) {
                     vnOverlap = true;
@@ -972,7 +974,7 @@ const EudrCheckFeature: React.FC<EudrCheckFeatureProps> = ({
 
             {/* KINKS ERROR BANNER */}
             {state.hasKinks && (
-                <div className="absolute top-3 left-3 right-3 z-[1000] p-3 rounded-xl bg-red-600/95 border-2 border-red-400 animate-bounce">
+                <div className="absolute top-20 left-4 right-4 z-[1000] p-3 rounded-xl bg-red-600/95 border-2 border-red-400 animate-bounce">
                     <div className="flex items-center gap-2">
                         <AlertTriangle className="w-5 h-5 text-white flex-shrink-0" />
                         <p className="text-white text-sm font-bold">{state.kinksMessage}</p>
@@ -983,7 +985,7 @@ const EudrCheckFeature: React.FC<EudrCheckFeatureProps> = ({
             {/* DRAWING MODE CONTROLS */}
             {state.status === 'drawing' && (
                 <div
-                    className="absolute bottom-3 left-3 right-3 z-[1000] p-4 rounded-xl"
+                    className="absolute bottom-24 left-4 right-4 z-[1000] p-4 rounded-xl"
                     style={{
                         background: 'rgba(0, 0, 0, 0.95)',
                         border: '2px solid rgba(0, 255, 148, 0.5)',
@@ -1065,7 +1067,7 @@ const EudrCheckFeature: React.FC<EudrCheckFeatureProps> = ({
             /* SAFE (GREEN) - Modern Glassmorphic Design */
             {state.status === 'safe' && (
                 <div
-                    className="absolute bottom-20 left-4 right-4 z-[1000] p-6 rounded-3xl animate-in slide-in-from-bottom-10 duration-500"
+                    className="absolute bottom-24 left-4 right-4 z-[1000] p-6 rounded-3xl animate-in slide-in-from-bottom-10 duration-500"
                     style={{
                         background: 'rgba(0, 40, 20, 0.85)',
                         backdropFilter: 'blur(20px)',
@@ -1107,7 +1109,7 @@ const EudrCheckFeature: React.FC<EudrCheckFeatureProps> = ({
             /* WARNING (YELLOW) - Glassmorphic */
             {state.status === 'warning' && (
                 <div
-                    className="absolute bottom-20 left-4 right-4 z-[1000] p-6 rounded-3xl animate-in slide-in-from-bottom-10 duration-500"
+                    className="absolute bottom-24 left-4 right-4 z-[1000] p-6 rounded-3xl animate-in slide-in-from-bottom-10 duration-500"
                     style={{
                         background: 'rgba(60, 40, 0, 0.85)',
                         backdropFilter: 'blur(20px)',
@@ -1161,7 +1163,7 @@ const EudrCheckFeature: React.FC<EudrCheckFeatureProps> = ({
             /* LEGAL_RISK (ORANGE) - Glassmorphic */
             {state.status === 'legal_risk' && (
                 <div
-                    className="absolute bottom-20 left-4 right-4 z-[1000] p-6 rounded-3xl animate-in slide-in-from-bottom-10 duration-500"
+                    className="absolute bottom-24 left-4 right-4 z-[1000] p-6 rounded-3xl animate-in slide-in-from-bottom-10 duration-500"
                     style={{
                         background: 'rgba(60, 20, 0, 0.85)',
                         backdropFilter: 'blur(20px)',
@@ -1215,7 +1217,7 @@ const EudrCheckFeature: React.FC<EudrCheckFeatureProps> = ({
             /* VIOLATION (RED) - Glassmorphic */
             {state.status === 'violation' && (
                 <div
-                    className="absolute bottom-20 left-4 right-4 z-[1000] p-6 rounded-3xl animate-in slide-in-from-bottom-10 duration-500"
+                    className="absolute bottom-24 left-4 right-4 z-[1000] p-6 rounded-3xl animate-in slide-in-from-bottom-10 duration-500"
                     style={{
                         background: 'rgba(60, 0, 0, 0.85)',
                         backdropFilter: 'blur(20px)',

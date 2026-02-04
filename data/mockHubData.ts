@@ -63,7 +63,13 @@ export const MOCK_CAMPAIGNS: Omit<Campaign, 'createdAt' | 'updatedAt'>[] = [
         pickupDate: '2026-01-28',
         status: 'ACTIVE',
         deepLinkCode: 'NPK14K',
-        commissionRate: 3
+        commissionRate: 3,
+        pricingTiers: [
+            { minQuantity: 10, price: 370000 },
+            { minQuantity: 50, price: 360000 },
+            { minQuantity: 150, price: 350000 },
+            { minQuantity: 400, price: 340000 }
+        ]
     },
     {
         id: 'campaign_thuoc_chu_pah',

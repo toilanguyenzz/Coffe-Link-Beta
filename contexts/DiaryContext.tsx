@@ -29,6 +29,12 @@ export const useDiary = () => {
   return context;
 };
 
+// Safe version that returns fallback when context is not available
+export const useDiarySafe = () => {
+  const context = useContext(DiaryContext);
+  return context || { logs: [], addLog: () => { } };
+};
+
 export const DiaryProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [logs, setLogs] = useState<DiaryLog[]>([
     {

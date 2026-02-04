@@ -302,10 +302,111 @@ export const formatWeatherSummary = (report: FullWeatherReport): string => {
     return summary;
 };
 
+// ═══════════════════════════════════════════════════════════════════════════
+// DRYING INDEX & HARVEST ADVISOR (New for Community Weather Hub)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface DryingIndex {
+    consecutiveSunnyDays: number;  // Number of sunny days ahead
+    indexScore: number;            // 0-100 score
+    status: 'golden' | 'good' | 'risky' | 'danger';
+    statusLabel: string;
+}
+
+export interface HarvestAdvice {
+    canHarvest: boolean;
+    title: string;
+    message: string;
+    urgency: 'now' | 'wait' | 'stop';
+    emoji: string;
+}
+
+/**
+ * Calculate Drying Index based on weather forecast.
+ * Used to advise farmers on optimal harvest timing.
+ */
+export const getDryingIndex = (forecast: RainForecast): DryingIndex => {
+    // Calculate consecutive sunny days (inverse of rainy days)
+    const sunnyDays = 3 - forecast.daysWithRain;
+
+    // Score based on rain probability (inverse relationship)
+    const indexScore = Math.max(0, 100 - forecast.rainProbability);
+
+    // Determine status
+    let status: DryingIndex['status'];
+    let statusLabel: string;
+
+    if (sunnyDays >= 3 && forecast.rainProbability < 20) {
+        status = 'golden';
+        statusLabel = 'CƠ HỘI VÀNG';
+    } else if (sunnyDays >= 2 && forecast.rainProbability < 40) {
+        status = 'good';
+        statusLabel = 'Tốt';
+    } else if (sunnyDays >= 1 && forecast.rainProbability < 60) {
+        status = 'risky';
+        statusLabel = 'Rủi ro';
+    } else {
+        status = 'danger';
+        statusLabel = 'Nguy hiểm';
+    }
+
+    return {
+        consecutiveSunnyDays: Math.max(0, sunnyDays),
+        indexScore,
+        status,
+        statusLabel,
+    };
+};
+
+/**
+ * Get harvest advice based on drying index.
+ * Tells farmers whether to harvest now or wait.
+ */
+export const getHarvestAdvice = (dryingIndex: DryingIndex): HarvestAdvice => {
+    switch (dryingIndex.status) {
+        case 'golden':
+            return {
+                canHarvest: true,
+                title: 'CƠ HỘI VÀNG!',
+                message: `Cắt cà ngay! Phơi ${dryingIndex.consecutiveSunnyDays} nắng liền là đạt chuẩn Hạng 1.`,
+                urgency: 'now',
+                emoji: '🌟',
+            };
+        case 'good':
+            return {
+                canHarvest: true,
+                title: 'Thời tiết tốt',
+                message: `Có thể thu hoạch. ${dryingIndex.consecutiveSunnyDays} ngày nắng đủ phơi khô.`,
+                urgency: 'now',
+                emoji: '✅',
+            };
+        case 'risky':
+            return {
+                canHarvest: false,
+                title: 'Cân nhắc kỹ',
+                message: 'Có khả năng mưa. Nếu cắt, cần chuẩn bị bạt che.',
+                urgency: 'wait',
+                emoji: '⚠️',
+            };
+        case 'danger':
+        default:
+            return {
+                canHarvest: false,
+                title: 'DỪNG CẮT!',
+                message: 'Đừng tham! Cắt về không phơi được là thối hết. Chờ nắng lên!',
+                urgency: 'stop',
+                emoji: '🛑',
+            };
+    }
+};
+
 export default {
     getCurrentWeather,
     getRainForecast,
     getFullWeatherReport,
     detectSeason,
-    formatWeatherSummary
+    formatWeatherSummary,
+    getDryingIndex,
+    getHarvestAdvice,
 };
+

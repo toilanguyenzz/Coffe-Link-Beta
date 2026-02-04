@@ -8,14 +8,13 @@ import { useNavigate } from 'react-router-dom';
 import {
   Star,
   MapPin,
-  Phone,
   LogOut,
   Loader2,
   Shield,
   Globe,
   X,
 } from 'lucide-react';
-
+import { useAuth } from '../contexts/DemoAuthContext';
 
 // Lazy load EUDR Map
 const EudrCheckFeature = lazy(() => import('../components/features/EudrCheckFeature'));
@@ -34,6 +33,7 @@ const MapPlaceholder: React.FC = () => (
 );
 
 const Profile: React.FC = () => {
+  const { logout } = useAuth(); // Get logout from context
   const navigate = useNavigate();
 
   const [isVerified, setIsVerified] = useState(() => {
@@ -54,15 +54,10 @@ const Profile: React.FC = () => {
     }
   };
 
-  const handleSupport = () => {
-    window.open('tel:1900123456');
-  };
-
   const handleLogout = () => {
-    if (confirm('Bạn có chắc muốn đăng xuất?')) {
-      localStorage.clear();
-      navigate('/login');
-    }
+    // Direct logout for smoother UX (or replace with custom modal later)
+    logout();
+    navigate('/login');
   };
 
   return (
@@ -275,7 +270,6 @@ const Profile: React.FC = () => {
             </div>
           </div>
         )}
-
 
       </div>
     </div>

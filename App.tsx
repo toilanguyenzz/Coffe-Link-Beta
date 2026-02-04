@@ -7,6 +7,7 @@ import { DiaryProvider } from './contexts/DiaryContext';
 import { FarmDataProvider } from './contexts/FarmDataContext';
 import { ReminderProvider } from './contexts/ReminderContext';
 import { GreenPointsProvider } from './contexts/GreenPointsContext';
+import { MascotProvider } from './contexts/MascotContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
@@ -105,40 +106,41 @@ export default function App() {
             <FarmDataProvider>
               <ReminderProvider>
                 <GreenPointsProvider>
-                  {/* Global Components */}
-                  <ReminderToast />
-                  <WeatherAlertBanner />
+                  <MascotProvider>
+                    {/* Global Components */}
+                    <ReminderToast />
+                    <WeatherAlertBanner />
 
+                    <Router>
+                      {/* GlobalVoiceFAB temporarily disabled - causing crash */}
+                      {/* <GlobalVoiceFAB /> */}
+                      <Routes>
+                        {/* Public Routes */}
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<Register />} />
 
-                  <Router>
-                    {/* GlobalVoiceFAB temporarily disabled - causing crash */}
-                    {/* <GlobalVoiceFAB /> */}
-                    <Routes>
-                      {/* Public Routes */}
-                      <Route path="/login" element={<Login />} />
-                      <Route path="/register" element={<Register />} />
+                        {/* Onboarding is special, might overlap both? For now keep it separate or protected */}
+                        <Route
+                          path="/onboarding"
+                          element={
+                            <ProtectedRoute>
+                              <Onboarding />
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      {/* Onboarding is special, might overlap both? For now keep it separate or protected */}
-                      <Route
-                        path="/onboarding"
-                        element={
-                          <ProtectedRoute>
-                            <Onboarding />
-                          </ProtectedRoute>
-                        }
-                      />
-
-                      {/* Main Role-Based Gateway */}
-                      <Route
-                        path="/*"
-                        element={
-                          <ProtectedRoute>
-                            <RoleBasedRoutes />
-                          </ProtectedRoute>
-                        }
-                      />
-                    </Routes>
-                  </Router>
+                        {/* Main Role-Based Gateway */}
+                        <Route
+                          path="/*"
+                          element={
+                            <ProtectedRoute>
+                              <RoleBasedRoutes />
+                            </ProtectedRoute>
+                          }
+                        />
+                      </Routes>
+                    </Router>
+                  </MascotProvider>
                 </GreenPointsProvider>
               </ReminderProvider>
             </FarmDataProvider>

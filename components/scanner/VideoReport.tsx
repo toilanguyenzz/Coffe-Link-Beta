@@ -10,15 +10,19 @@
  * - Fertilizer recommendations
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { VideoAnalysisResult, DetectedIssue } from '../../services/VideoAnalysisService';
 import { formatVND } from '../../services/ConsultationService';
 import {
     Play, Pause, AlertTriangle, CheckCircle, AlertCircle,
     Leaf, Bug, Droplet, FlaskConical, Lightbulb, Clock,
-    ChevronDown, ChevronUp, Volume2
+    ChevronDown, ChevronUp, Volume2, ShoppingCart, Truck,
+    MapPin, Phone, Plus, Minus, MessageCircle
 } from 'lucide-react';
 import { speak, stopSpeech, isSpeechSupported } from '../../services/VoiceService';
+import { Product } from '../../data/shopData';
+import { getProductRecommendations, RecommendationResult } from '../../services/ProductRecommendationService';
+import { createOrder, buildZaloDeepLink, buildPhoneCallLink } from '../../services/OrderService';
 
 interface VideoReportProps {
     result: VideoAnalysisResult;
@@ -38,8 +42,15 @@ const VideoReport: React.FC<VideoReportProps> = ({
     const [duration, setDuration] = useState(0);
     const [expandedIssue, setExpandedIssue] = useState<string | null>(null);
     const [isSpeaking, setIsSpeaking] = useState(false);
+    const [orderQuantity, setOrderQuantity] = useState(1);
+    const [isOrdering, setIsOrdering] = useState(false);
 
     const videoRef = useRef<HTMLVideoElement>(null);
+
+    // Get product recommendations using the new service
+    const recommendation: RecommendationResult = useMemo(() => {
+        return getProductRecommendations(result.issues);
+    }, [result.issues]);
 
     // Health colors
     const healthColors = {
@@ -121,12 +132,48 @@ const VideoReport: React.FC<VideoReportProps> = ({
         high: 'bg-red-100 text-red-700 border-red-300',
     };
 
-    // Issue type icons
     const issueIcons = {
         disease: Bug,
         pest: Bug,
         deficiency: Droplet,
         other: AlertCircle,
+    };
+
+    // --- ORDER HANDLERS ---
+    const handleBuyNow = (product: Product) => {
+        if (!recommendation.nearestHub) {
+            alert('Không tìm thấy đại lý gần bạn. Vui lòng thử lại.');
+            return;
+        }
+
+        setIsOrdering(true);
+
+        // Create order
+        const order = createOrder(
+            [{ product, quantity: orderQuantity }],
+            { name: 'Khách hàng CoffeeLink', phone: '' },
+            recommendation.nearestHub,
+            'Giao tận vườn'
+        );
+
+        // Build Zalo deeplink and open
+        const zaloUrl = buildZaloDeepLink(order);
+
+        // Open Zalo (works on mobile)
+        window.open(zaloUrl, '_blank');
+
+        setIsOrdering(false);
+    };
+
+    const handleCallDealer = () => {
+        if (recommendation.nearestHub) {
+            const phoneUrl = buildPhoneCallLink(recommendation.nearestHub);
+            window.open(phoneUrl, '_blank');
+        }
+    };
+
+    const adjustQuantity = (delta: number) => {
+        setOrderQuantity(prev => Math.max(1, prev + delta));
     };
 
     return (
@@ -177,7 +224,7 @@ const VideoReport: React.FC<VideoReportProps> = ({
                                         key={`${issue.id}-${frameIdx}`}
                                         onClick={() => seekToTime(markerTime)}
                                         className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-white ${issue.severity === 'high' ? 'bg-red-500' :
-                                                issue.severity === 'medium' ? 'bg-orange-500' : 'bg-yellow-500'
+                                            issue.severity === 'medium' ? 'bg-orange-500' : 'bg-yellow-500'
                                             }`}
                                         style={{ left: `${position}%` }}
                                         title={issue.name}
@@ -201,8 +248,8 @@ const VideoReport: React.FC<VideoReportProps> = ({
                     <button
                         onClick={handleVoiceToggle}
                         className={`w-full mb-4 py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${isSpeaking
-                                ? 'bg-rose-500 text-white animate-pulse'
-                                : 'bg-violet-500 text-white hover:bg-violet-600'
+                            ? 'bg-rose-500 text-white animate-pulse'
+                            : 'bg-violet-500 text-white hover:bg-violet-600'
                             }`}
                     >
                         <Volume2 className="h-5 w-5" />
@@ -394,6 +441,171 @@ const VideoReport: React.FC<VideoReportProps> = ({
                                 <li key={idx} className="text-sm text-purple-800">{tip}</li>
                             ))}
                         </ul>
+                    </div>
+                )}
+
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {/* DOCTOR'S PRESCRIPTION (ONE-CLICK ACTION) - ENHANCED */}
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {recommendation.primary && (
+                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-0.5 mt-6 shadow-xl">
+                        <div className="bg-white rounded-[14px] overflow-hidden">
+                            {/* Header */}
+                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 border-b border-blue-100 flex justify-between items-center">
+                                <div className="flex items-center gap-2">
+                                    <div className="bg-white p-1.5 rounded-lg shadow-sm">
+                                        <FlaskConical className="h-5 w-5 text-blue-600" />
+                                    </div>
+                                    <span className="font-bold text-blue-900">🩺 Bác sĩ kê đơn</span>
+                                </div>
+                                <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full border border-green-200">
+                                    ƯU ĐÃI THÀNH VIÊN
+                                </span>
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-4">
+                                <p className="text-gray-600 text-sm mb-3">
+                                    Phát hiện <strong className="text-red-600">{result.issues[0]?.name || 'vấn đề'}</strong>, bác sĩ khuyên dùng:
+                                </p>
+
+                                {/* Primary Product */}
+                                <div className="flex gap-4 mb-3">
+                                    <div className="w-20 h-20 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border border-gray-200">
+                                        <img
+                                            src={recommendation.primary.imageUrl || 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=150&auto=format&fit=crop'}
+                                            alt={recommendation.primary.name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+
+                                    <div className="flex-1">
+                                        <h4 className="font-bold text-gray-900 text-base leading-tight">
+                                            {recommendation.primary.name}
+                                        </h4>
+                                        <p className="text-xs text-gray-500 mt-0.5">{recommendation.primary.brand}</p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <span className="text-gray-400 line-through text-xs">
+                                                {formatVND(recommendation.primary.marketPrice)}
+                                            </span>
+                                            <span className="text-red-600 font-bold text-lg">
+                                                {formatVND(recommendation.primary.memberPrice)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Dosage Guide */}
+                                {'dosageGuide' in recommendation.primary && (
+                                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-2 mb-3 text-xs text-blue-800">
+                                        💊 <strong>Liều dùng:</strong> {(recommendation.primary as any).dosageGuide}
+                                    </div>
+                                )}
+
+                                {/* Quantity Selector */}
+                                <div className="flex items-center justify-between mb-3 bg-gray-50 rounded-lg p-2">
+                                    <span className="text-sm text-gray-600">Số lượng:</span>
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={() => adjustQuantity(-1)}
+                                            className="w-8 h-8 bg-white rounded-lg border border-gray-200 flex items-center justify-center active:bg-gray-100"
+                                        >
+                                            <Minus className="h-4 w-4 text-gray-600" />
+                                        </button>
+                                        <span className="font-bold text-lg w-8 text-center">{orderQuantity}</span>
+                                        <button
+                                            onClick={() => adjustQuantity(1)}
+                                            className="w-8 h-8 bg-white rounded-lg border border-gray-200 flex items-center justify-center active:bg-gray-100"
+                                        >
+                                            <Plus className="h-4 w-4 text-gray-600" />
+                                        </button>
+                                    </div>
+                                    <span className="text-sm font-bold text-gray-800">
+                                        {formatVND(recommendation.primary.memberPrice * orderQuantity)}
+                                    </span>
+                                </div>
+
+                                {/* Dealer Info */}
+                                {recommendation.nearestHub && (
+                                    <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3 mb-3">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <MapPin className="h-4 w-4 text-emerald-600" />
+                                            <span className="font-bold text-emerald-800">{recommendation.nearestHub.name}</span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2 text-xs text-emerald-700">
+                                            <div className="flex items-center gap-1">
+                                                <span>👤</span>
+                                                <span>{recommendation.nearestHub.leaderName}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <Phone className="h-3 w-3" />
+                                                <span>{recommendation.nearestHub.leaderPhone}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <Truck className="h-3 w-3" />
+                                                <span>{recommendation.deliveryTime}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <MapPin className="h-3 w-3" />
+                                                <span>Cách {recommendation.distance}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Action Buttons */}
+                                <div className="space-y-2">
+                                    {/* Main CTA - Zalo Order */}
+                                    <button
+                                        onClick={() => handleBuyNow(recommendation.primary!)}
+                                        disabled={isOrdering}
+                                        className="w-full py-3.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                    >
+                                        <MessageCircle className="h-5 w-5" />
+                                        {isOrdering ? 'Đang xử lý...' : 'ĐẶT HÀNG QUA ZALO'}
+                                    </button>
+
+                                    {/* Secondary - Call Dealer */}
+                                    <button
+                                        onClick={handleCallDealer}
+                                        className="w-full py-3 bg-emerald-500 text-white rounded-xl font-bold active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <Phone className="h-4 w-4" />
+                                        GỌI NGAY: {recommendation.nearestHub?.leaderPhone}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Alternative Products */}
+                {recommendation.alternatives.length > 0 && (
+                    <div className="mt-4 bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
+                        <h4 className="font-bold text-gray-800 mb-3 text-sm">💊 Sản phẩm thay thế</h4>
+                        <div className="space-y-2">
+                            {recommendation.alternatives.slice(0, 2).map((product) => (
+                                <div key={product.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                                    <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden">
+                                        <img
+                                            src={product.imageUrl || 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=100&auto=format&fit=crop'}
+                                            alt={product.name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="font-medium text-gray-800 text-sm">{product.name}</p>
+                                        <p className="text-red-600 font-bold text-sm">{formatVND(product.memberPrice)}</p>
+                                    </div>
+                                    <button
+                                        onClick={() => handleBuyNow(product)}
+                                        className="px-3 py-1.5 bg-blue-500 text-white text-xs rounded-lg font-bold"
+                                    >
+                                        Đặt
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
 

@@ -22,6 +22,7 @@ const MOCK_DEALS: Deal[] = [
         isPromoted: true,
         status: 'active',
         ecoTag: 'ORGANIC',
+        productImage: 'https://images.unsplash.com/photo-1628155930542-a876881c532c?w=500&auto=format&fit=crop',
         createdAt: new Date().toISOString()
     },
     {
@@ -36,6 +37,7 @@ const MOCK_DEALS: Deal[] = [
         isPromoted: false,
         status: 'active',
         ecoTag: 'BIOLOGICAL',
+        productImage: 'https://images.unsplash.com/photo-1563713606733-40f4dc404f85?w=500&auto=format&fit=crop',
         createdAt: new Date().toISOString()
     },
     {
@@ -50,6 +52,7 @@ const MOCK_DEALS: Deal[] = [
         isPromoted: true,
         status: 'active',
         ecoTag: null,
+        productImage: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=500&auto=format&fit=crop',
         createdAt: new Date().toISOString()
     },
     {
@@ -64,6 +67,67 @@ const MOCK_DEALS: Deal[] = [
         isPromoted: false,
         status: 'active',
         ecoTag: null,
+        productImage: 'https://images.unsplash.com/photo-1598282361661-6893e36e81dd?w=500&auto=format&fit=crop',
+        createdAt: new Date().toISOString()
+    },
+    {
+        id: 'deal_5',
+        title: 'Phân bón NPK 16-16-8 Việt Nhật',
+        brand: 'Việt Nhật',
+        price: 165000,
+        originalPrice: 190000,
+        unit: 'bao 25kg',
+        currentQuantity: 62,
+        maxQuantity: 150,
+        isPromoted: true,
+        status: 'active',
+        ecoTag: null,
+        productImage: 'https://plus.unsplash.com/premium_photo-1661962360662-5887201c7068?w=500&auto=format&fit=crop',
+        createdAt: new Date().toISOString()
+    },
+    {
+        id: 'deal_6',
+        title: 'Kéo cắt cành SK5 Nhật Bản',
+        brand: 'SK5',
+        price: 120000,
+        originalPrice: 250000,
+        unit: 'cái',
+        currentQuantity: 45,
+        maxQuantity: 50,
+        isPromoted: true,
+        status: 'active',
+        ecoTag: null,
+        productImage: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=500&auto=format&fit=crop',
+        createdAt: new Date().toISOString()
+    },
+    {
+        id: 'deal_7',
+        title: 'Vòi tưới cây đa năng 50m',
+        brand: 'Total',
+        price: 350000,
+        originalPrice: 450000,
+        unit: 'cuộn',
+        currentQuantity: 12,
+        maxQuantity: 30,
+        isPromoted: false,
+        status: 'active',
+        ecoTag: null,
+        productImage: 'https://images.unsplash.com/photo-1615485925763-867862880877?w=500&auto=format&fit=crop',
+        createdAt: new Date().toISOString()
+    },
+    {
+        id: 'deal_8',
+        title: 'Thuốc trừ nấm sinh học Trichoderma',
+        brand: 'Nông Lâm',
+        price: 55000,
+        originalPrice: 80000,
+        unit: 'gói 1kg',
+        currentQuantity: 88,
+        maxQuantity: 200,
+        isPromoted: true,
+        status: 'active',
+        ecoTag: 'BIOLOGICAL',
+        productImage: 'https://images.unsplash.com/photo-1587049352851-8d4e8918dcf1?w=500&auto=format&fit=crop',
         createdAt: new Date().toISOString()
     }
 ];
