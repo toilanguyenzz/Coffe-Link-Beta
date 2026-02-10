@@ -1,6 +1,11 @@
 /**
  * FarmConsultation.tsx - Tư Vấn AI
  * Premium Redesign - 100% Match Mockup
+ * 
+ * Features:
+ * - Disease diagnosis from leaf photos
+ * - Garden-wide video survey
+ * - EU Chemical Compliance Check (EUDR)
  */
 
 import React, { useState, useRef } from 'react';
@@ -9,9 +14,13 @@ import { analyzePlantDisease, PlantAnalysisResult, PlantDoctorError } from '../s
 import BottomNav from '../components/layout/BottomNav';
 import {
     Loader2, AlertCircle, X, FlaskConical, ShieldAlert, Sprout,
-    Camera, Video, Bug, Brain, Lightbulb, CheckCircle2, ChevronRight
+    Camera, Video, Bug, Brain, Lightbulb, CheckCircle2, ChevronRight, Shield
 } from 'lucide-react';
 import { PlantCondition } from '../services/ConsultationService';
+
+// EUDR Chemical Check imports
+import BarcodeScanner from '../components/scanner/BarcodeScanner';
+import { useChemicalCheck, ChemicalResultCard, ChemicalNotFoundCard } from '../src/features/eudr-check';
 
 const FarmConsultation: React.FC = () => {
     const navigate = useNavigate();
@@ -26,6 +35,11 @@ const FarmConsultation: React.FC = () => {
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const [aiResult, setAiResult] = useState<PlantAnalysisResult | null>(null);
     const [scanError, setScanError] = useState<string>('');
+
+    // EUDR Chemical Scanner State
+    const [showChemicalScanner, setShowChemicalScanner] = useState(false);
+    const [showChemicalResult, setShowChemicalResult] = useState(false);
+    const { scanResult, isLoading: chemicalLoading, checkBarcode, clearResult } = useChemicalCheck();
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -181,6 +195,25 @@ const FarmConsultation: React.FC = () => {
                                 </h3>
                                 <p className="text-gray-500 text-sm font-medium leading-snug">
                                     Quét video để đánh giá sức khỏe tổng thể
+                                </p>
+                            </div>
+                            <ChevronRight className="text-gray-300 w-6 h-6" />
+                        </button>
+
+                        {/* Card 3: Kiểm tra thuốc BVTV (EUDR Check) */}
+                        <button
+                            onClick={() => setShowChemicalScanner(true)}
+                            className="w-full bg-[#f2f7f2] rounded-[32px] p-4 flex items-center pr-6 shadow-sm hover:shadow-md active:scale-[0.98] transition-all group border border-white"
+                        >
+                            <div className="w-20 h-20 bg-[#f59e0b] rounded-[24px] flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform mr-5 flex-shrink-0">
+                                <Shield className="w-9 h-9 text-white" />
+                            </div>
+                            <div className="text-left flex-1">
+                                <h3 className="text-[#064e3b] text-xl font-bold mb-1">
+                                    Kiểm tra thuốc BVTV
+                                </h3>
+                                <p className="text-gray-500 text-sm font-medium leading-snug">
+                                    Quét mã vạch để xác minh tuân thủ xuất khẩu EU
                                 </p>
                             </div>
                             <ChevronRight className="text-gray-300 w-6 h-6" />
@@ -435,6 +468,67 @@ const FarmConsultation: React.FC = () => {
                             )}
                         </div>
                     </div>
+                )}
+
+                {/* ══════════════════════════════════════════════════════════════════ */}
+                {/* CHEMICAL SCANNER MODAL (EUDR Check) */}
+                {/* ══════════════════════════════════════════════════════════════════ */}
+                {showChemicalScanner && (
+                    <BarcodeScanner
+                        onScan={async (barcode) => {
+                            setShowChemicalScanner(false);
+                            try {
+                                await checkBarcode(barcode);
+                                setShowChemicalResult(true);
+                            } catch (err) {
+                                // Error handled by hook
+                                setShowChemicalResult(true);
+                            }
+                        }}
+                        onCancel={() => {
+                            setShowChemicalScanner(false);
+                            clearResult();
+                        }}
+                    />
+                )}
+
+                {/* ══════════════════════════════════════════════════════════════════ */}
+                {/* CHEMICAL RESULT MODAL */}
+                {/* ══════════════════════════════════════════════════════════════════ */}
+                {showChemicalResult && scanResult && (
+                    scanResult.found && scanResult.product ? (
+                        <ChemicalResultCard
+                            product={scanResult.product}
+                            earliestHarvestDate={scanResult.earliestHarvestDate}
+                            onClose={() => {
+                                setShowChemicalResult(false);
+                                clearResult();
+                            }}
+                            onConfirm={() => {
+                                setShowChemicalResult(false);
+                                clearResult();
+                                // Could navigate to diary or show success toast
+                            }}
+                            onScanAnother={() => {
+                                setShowChemicalResult(false);
+                                clearResult();
+                                setShowChemicalScanner(true);
+                            }}
+                        />
+                    ) : (
+                        <ChemicalNotFoundCard
+                            barcode={scanResult.scannedBarcode}
+                            onClose={() => {
+                                setShowChemicalResult(false);
+                                clearResult();
+                            }}
+                            onScanAnother={() => {
+                                setShowChemicalResult(false);
+                                clearResult();
+                                setShowChemicalScanner(true);
+                            }}
+                        />
+                    )
                 )}
 
                 <BottomNav />
