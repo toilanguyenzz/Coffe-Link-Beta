@@ -1,125 +1,115 @@
-# ☕ BeanLink (Agri-OS) — Coffee Supply Chain & EUDR Compliance Platform
+# ☕ BeanLink — Coffee Traceability & Farm Management App
 
-> **A Low-Friction Digital Operating System for Coffee Smallholders, Harvest Traceability, and EUDR Deforestation Compliance in Vietnam.**
+> A mobile-first app that helps coffee smallholders in Vietnam log their harvests digitally, track farm plots on a map, and meet EU export compliance requirements (EUDR).
 
 <div align="center">
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](#)
-[![React](https://img.shields.io/badge/React-19.2_TypeScript-61dafb.svg?style=flat-square&logo=react)](#)
-[![Capacitor](https://img.shields.io/badge/Mobile-Capacitor_Android-119EFF.svg?style=flat-square&logo=capacitor)](#)
-[![GIS](https://img.shields.io/badge/GIS-Leaflet_%26_Turf.js-199900.svg?style=flat-square&logo=leaflet)](#)
-[![AI](https://img.shields.io/badge/AI-Google_Gemini_GenAI-8E75C2.svg?style=flat-square&logo=google)](#)
-[![Compliance](https://img.shields.io/badge/Standard-EUDR_Regulation-green.svg?style=flat-square)](#)
+[![React](https://img.shields.io/badge/React-19_TypeScript-61dafb.svg?style=flat-square&logo=react)](#)
+[![Mobile](https://img.shields.io/badge/Mobile-Capacitor_Android-119EFF.svg?style=flat-square&logo=capacitor)](#)
+[![GIS](https://img.shields.io/badge/GIS-Leaflet_Turf.js-199900.svg?style=flat-square&logo=leaflet)](#)
+[![AI](https://img.shields.io/badge/AI-Google_Gemini-8E75C2.svg?style=flat-square&logo=google)](#)
 
 </div>
 
 ---
 
-## 📌 Executive Summary & Business Context
+## What This Project Is
 
-Vietnam is the world's second-largest coffee producer, with smallholder farmers accounting for over 90% of total production in key regions such as Lam Dong and Dak Lak. However, the coffee export value chain faces an urgent regulatory disruption: **The European Union Deforestation Regulation (EUDR)**, requiring precise polygon-based land geolocation and proof of zero deforestation down to each individual plot.
+This is a **self-initiated project** I worked on with one teammate during Sep–Dec 2025. I was the **Business Analyst & UX Researcher** — I interviewed farmers, mapped out the current workflow, figured out the EU compliance requirements, and designed the app's user experience.
 
-### The Core Pain Points (As-Is Process Bottlenecks):
-1. **Paper-Based Logging & Traceability Gaps:** Smallholder farming journals are maintained on paper or via memory, leading to lost harvest records and batch mixing during collector consolidation.
-2. **Severe User Inertia:** Field farmers cannot and will not operate bloated enterprise ERP systems while working in coffee orchards.
-3. **EUDR & Geolocation Barriers:** Cadastral boundaries in Vietnam utilize the **VN2000** coordinate reference system, which must be mathematically transformed into global WGS-84 polygons to prove compliance with EU satellite registries.
-4. **Soil & Climate Blindness:** Lack of real-time soil moisture monitoring leads to irregular irrigation and suboptimal harvest yields.
+**The problem:** Vietnam is the world's 2nd largest coffee producer, but most smallholder farmers still use paper notebooks to track their harvests. When the EU introduced new deforestation regulations (EUDR), exporters suddenly needed precise GPS boundaries for every farm plot — and farmers had no way to provide that digitally.
+
+**Our solution:** A simple mobile app where farmers can log harvests in 2 taps, view their farm plots on a map, and automatically generate the GPS data that exporters need for EUDR compliance.
 
 ---
 
-## 💡 The BeanLink Solution (To-Be Architecture)
+## My BA & Research Contributions
 
-**BeanLink (Agri-OS)** bridges the gap between field agriculture and international export compliance via a **low-friction, mobile-first ecosystem**:
+### 1. Field Research & Process Mapping
+
+I visited **20+ coffee farms in Lam Dong** and interviewed farmers about their daily workflow. Based on those interviews, I drew:
+
+- **As-Is process map (BPMN):** How farmers currently track harvests (paper notebooks → collector picks up → no digital record → export paperwork is guesswork)
+- **To-Be process map (BPMN):** How the app changes this (farmer logs harvest in app → data syncs to collector dashboard → GPS coordinates auto-generated for EUDR)
+
+Key finding from interviews: Most farmers are 45–65 years old, have limited smartphone experience, and often wear work gloves. This shaped every UX decision we made.
+
+### 2. EUDR Compliance Requirements
+
+I researched what the EU Deforestation Regulation actually requires and translated it into app features:
+
+- Farm plots in Vietnam use a local coordinate system called **VN2000**. EUDR requires **WGS-84** (standard GPS coordinates). I specified the conversion logic and the team implemented it using Turf.js.
+- Each export batch needs proof that the farm plot doesn't overlap with protected forest areas. We built a checker that compares plot boundaries against forest boundary datasets.
+
+### 3. UX Design (Figma Prototyping)
+
+Designed the mobile screens with these constraints in mind:
+- **Large buttons, high contrast** — farmers are often outdoors in bright sunlight
+- **2-tap harvest logging** — select crop type → tap "Log Harvest" → done
+- **Voice commands** — for hands-free use when wearing gloves
+- Tested the prototype with farmers in the field and iterated based on their feedback (e.g., they wanted bigger text sizes than I initially designed)
+
+### 4. Database Schema & API Testing
+
+- Designed the database tables for farms, plots, harvests, and users
+- Used **Postman** to test API endpoints and make sure harvest data synced correctly between the mobile app and the collector's warehouse dashboard
+
+---
+
+## How the App Works
 
 ```
-[Smallholder Farmer]
+[Farmer with smartphone]
        │
-       ├──► 2-Tap Harvest Logging (Voice-Assisted & Offline-First)
-       ├──► IoT Soil Moisture & Microclimate Sensor Stream
-       ├──► VN2000 to WGS-84 Polygon Transformation & EUDR Compliance Audit
-       └──► Gemini GenAI "Plant Doctor" (Visual Pest & Disease Diagnosis)
-       │
-[Central Collector & Export Hub] ──► Batch QR Generation & Blockchain/Firebase Traceability Ledger
+       ├──► 2-tap harvest logging (weight, crop type, photo)
+       ├──► View farm plot boundaries on map
+       ├──► AI "Plant Doctor" — snap a photo of damaged leaves for diagnosis
+       └──► Soil moisture readings from IoT sensor (if available)
+              │
+[Collector / Exporter] ──► Batch tracking dashboard ──► EUDR compliance report with GPS polygons
 ```
 
 ---
 
-## 📐 Key Functional Modules & Business Analysis Deliverables
+## Tech Stack
 
-### 1. EUDR Compliance Engine & GIS Geofencing
-* **Cadastral Transformation (`VN2000Converter.ts`):** Converts local Vietnamese projection coordinates to WGS84 latitude/longitude polygons using `@turf/turf`.
-* **Deforestation Audit (`EUDRChecker.ts`):** Verifies farm plot coordinates against protected forest boundary datasets to provide instant EUDR export eligibility checks.
-* **Exif Photo Verification (`ImageWatermarkService.ts`):** Embeds cryptographic GPS timestamp watermarks into field verification photos to prevent fraudulent certification claims.
-
-### 2. Low-Friction Farmer UX & Voice Interface
-* Designed specifically for non-tech-savvy users wearing field gloves: 2-tap fast logging, high-contrast visual cues, and **Voice Command Assistant (`VoiceCommandService.ts`)**.
-* Automated lunar calendar agricultural scheduling (`LunarCalendarService.ts`) synchronized with regional rainfall forecasts (`WeatherService.ts`).
-
-### 3. IoT Sensor Stream & Microclimate Analytics
-* Real-time monitoring of soil volumetric water content (`MoistureService.ts`) to optimize drip irrigation intervals and reduce water waste.
-* Automatic alert dispatching for drought stress and fungal disease vulnerability windows.
-
-### 4. Gemini GenAI "Plant Doctor" Consultation
-* Multi-modal visual diagnosis (`PlantDoctorService.ts`, `AIConsultationService.ts` powered by `@google/genai`): Farmers snap a photo of damaged coffee leaves/cherries to receive step-by-step bio-fungicide treatment recommendations.
-
-### 5. Smallholder Trust Scoring & Green Credit Ledger
-* Dynamic credit rating engine (`GreenCreditService.ts`, `trustScoring.ts`) quantifying sustainable agricultural practices (water conservation, organic fertilizer ratio) to unlock low-interest micro-loans from partnered financial institutions.
-
----
-
-## 🛠️ System Architecture & Technology Stack
-
-| Layer | Technologies Employed |
+| Layer | Technologies |
 | :--- | :--- |
-| **Frontend & UI** | React 19, TypeScript 5.8, Vite 6, Tailwind CSS, Lucide Icons |
-| **Mobile Runtime** | Capacitor 8 (Cross-platform Android / Web PWA) |
-| **GIS & Mapping** | Leaflet 1.9, React-Leaflet, Turf.js (Spatial Analysis) |
-| **Artificial Intelligence** | Google Gemini GenAI SDK (`@google/genai`) |
-| **Backend & Storage** | Firebase Firestore (Realtime Sync & Ledger), LocalStorage Cache |
-| **Hardware Integration** | Soil IoT Sensor Telemetry, Camera Hardware API, Exif Metadata |
+| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS |
+| **Mobile** | Capacitor 8 (builds to Android APK) |
+| **Maps & GIS** | Leaflet, React-Leaflet, Turf.js |
+| **AI** | Google Gemini SDK (plant disease diagnosis) |
+| **Backend** | Firebase Firestore (real-time sync & storage) |
 
 ---
 
-## 🧪 Field Usability Testing & Metrics
+## Field Testing Results
 
-* **Sample Size:** Pilot field testing across **20+ smallholder coffee plots** in Lam Dong Province.
-* **Task Completion Rate:** **85%** on initial interaction without prior instructional training.
-* **Logging Time Reduction:** Reduced daily operational journaling from an estimated **15 minutes** (manual paper ledger) to **under 45 seconds** (mobile 2-tap log).
+- Tested with **20+ farmers** in Lam Dong Province
+- **85% task completion rate** on first use without any training
+- Daily logging time dropped from **~15 minutes** (paper notebook) to **under 45 seconds** (app)
 
 ---
 
-## 🚀 Running the Project Locally
+## Running Locally
 
-### Prerequisites
-* Node.js (v18 or higher)
-* npm or yarn
-
-### Installation
 ```bash
-# Clone the repository
 git clone https://github.com/toilanguyenzz/Coffe-Link-Beta.git
-
-# Navigate to project directory
 cd Coffe-Link-Beta
-
-# Install dependencies
 npm install
-
-# Start the Vite development server
 npm run dev
 ```
 
 ---
 
-## 📋 Retrospective & Future Roadmap (Post-Mortem Analysis)
+## What I Learned & What I'd Improve
 
-* **Current Limitation:** Satellite imagery overlay currently relies on public GIS APIs with limited resolution over steep terraced coffee plantations.
-* **Next Steps:** 
-  1. Integrate offline-sync SQLite database for deep-jungle areas without cellular data coverage.
-  2. Implement smart contract QR verification for end-to-end "farm-to-espresso" batch certification.
+- **Biggest lesson:** Talking to actual users before designing anything saved us from building features nobody wanted. The farmers didn't care about analytics dashboards — they just wanted fast, simple logging.
+- **Current limitation:** Map satellite imagery has limited resolution over steep terraced coffee plantations.
+- **Next step:** Add offline-first SQLite storage for areas without cell service (which is common in highland coffee regions).
 
 ---
 
 <div align="center">
-Developed by <strong>Ta Nguyen Khoi Nguyen</strong> • Business Analyst &amp; System Architect
+Built by <strong>Ta Nguyen Khoi Nguyen</strong> · FPT University · Self-initiated Project (Fall 2025)
 </div>
