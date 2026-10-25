@@ -29,3 +29,19 @@ dist-ssr
 *.sln
 *.sw?
 .agent
+
+# AI Agents & IDE Skills (Local tooling only)
+.agent
+.agents
+.claude
+.codex
+.continue
+.cursor
+.gemini
+.opencode
+
+# Workspace & Scratch Files
+*.code-workspace
+demo_output.txt
+STRATEGIC_REVIEW.md
+walkthrough.md

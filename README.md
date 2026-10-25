@@ -1,6 +1,6 @@
-# ☕ BeanLink — Coffee Traceability & Farm Management App
+# ☕ BeanLink (CoffeeLink Agri-OS) — EUDR Coffee Traceability Platform
 
-> A mobile-first app that helps coffee smallholders in Vietnam log their harvests digitally, track farm plots on a map, and meet EU export compliance requirements (EUDR).
+> A mobile-first agritech platform that helps coffee smallholders in Vietnam digitize daily harvest logging, convert cadastral parcel boundaries to international WGS-84 polygons, and guarantee full compliance with the European Union Deforestation Regulation (EUDR).
 
 <div align="center">
 
@@ -9,14 +9,29 @@
 [![GIS](https://img.shields.io/badge/GIS-Leaflet_Turf.js-199900.svg?style=flat-square&logo=leaflet)](#)
 [![AI](https://img.shields.io/badge/AI-Google_Gemini-8E75C2.svg?style=flat-square&logo=google)](#)
 [![Database](https://img.shields.io/badge/Database-Firebase_Firestore-FFA000.svg?style=flat-square&logo=firebase)](#)
+[![Postman](https://img.shields.io/badge/Postman-Verified_Collection-FF6C37.svg?style=flat-square&logo=postman)](#)
 
 </div>
 
 ---
 
+## 📑 Business Analyst & Systems Architecture Deliverables
+
+This repository is maintained as a **Case Study in Systems Analysis & Requirements Engineering**. The complete technical specification suite is organized under [`docs/`](docs/):
+
+| Deliverable Domain | Documentation & Artifacts | Primary Focus |
+|:---|:---|:---|
+| **Business Requirements** | [`docs/requirements/BRD_EUDR_Traceability.md`](docs/requirements/BRD_EUDR_Traceability.md)<br>[`docs/requirements/User_Stories_Acceptance_Criteria.md`](docs/requirements/User_Stories_Acceptance_Criteria.md) | Problem Statement, Scope, Business Rules (BR01–BR10), Agile User Stories with Gherkin Acceptance Criteria |
+| **Process Modeling (BPMN)** | [`docs/process-modeling/BPMN_As_Is_vs_To_Be.md`](docs/process-modeling/BPMN_As_Is_vs_To_Be.md)<br>[`docs/process-modeling/EUDR_Compliance_Pipeline.md`](docs/process-modeling/EUDR_Compliance_Pipeline.md) | As-Is vs To-Be Workflows, Cycle Time Scorecard, VN2000 to WGS-84 Cadastral Transformation, Turf.js Validation |
+| **Data Architecture** | [`docs/architecture/Data_Model_ERD.md`](docs/architecture/Data_Model_ERD.md) | 3NF Relational Database Schema, Spatial Geometry Indexing, Data Dictionary & Integrity Constraints |
+| **API & Systems Integration** | [`docs/api/API_Specification.md`](docs/api/API_Specification.md)<br>[`docs/api/BeanLink_Postman_Collection.json`](docs/api/BeanLink_Postman_Collection.json) | RESTful API Contract, Warehouse Stock Sync, Importable Postman Collection with Request/Response Payloads |
+| **UI/UX & Field Usability** | [`docs/ui-ux/Design_System_Wireframes.md`](docs/ui-ux/Design_System_Wireframes.md)<br>[`docs/ui-ux/DESIGN_SYSTEM.md`](docs/ui-ux/DESIGN_SYSTEM.md) | 20+ Farmer Usability Study in Lam Dong, 2-Tap Harvest Heuristics, Cyber-Agritech High-Contrast Theme |
+
+---
+
 ## What This Project Is
 
-This is a **self-initiated R&D project** I developed with one teammate during Sep–Dec 2025. I was the **Business Analyst & UX Researcher** — responsible for interviewing farmers in the Central Highlands, mapping workflows, analyzing EU export compliance requirements (EUDR), and designing the mobile user experience.
+This is a **self-initiated R&D project** developed with one teammate during Sep–Dec 2025. I was the **Business Analyst & UX Researcher** — responsible for interviewing farmers in the Central Highlands, mapping workflows, analyzing EU export compliance requirements (EUDR), and designing the mobile user experience.
 
 **The Problem:** Vietnam is the world's 2nd largest coffee producer, but over 85% of coffee comes from smallholders who still record harvests in paper notebooks. When the European Union enacted the EU Deforestation Regulation (EUDR), exporters faced strict requirements: every single export batch must prove it originated from non-deforested land with precise GPS plot polygons. Smallholder farmers had no easy digital tool to provide this.
 
@@ -61,7 +76,7 @@ graph TB
 
 ---
 
-## My BA & Research Contributions
+## Key BA & Research Contributions
 
 ### 1. As-Is vs. To-Be Process Mapping (BPMN)
 
@@ -93,7 +108,7 @@ flowchart TD
 
 ### 2. EUDR Geolocation & Compliance Pipeline
 
-Under EUDR Article 9, coffee plots > 4 hectares require full polygon coordinates (not just a single center point). I researched the technical specifications and defined the compliance transformation flow:
+Under EUDR Article 9, coffee plots >= 4 hectares require full polygon coordinates (not just a single center point). I researched the technical specifications and defined the compliance transformation flow:
 
 ```mermaid
 flowchart LR
@@ -111,7 +126,7 @@ flowchart LR
 ```
 
 - **Coordinate Transformation:** Vietnamese land records use **VN2000 (local projection)**, whereas the EU portal requires **WGS-84 (lat/long standard)**. I specified the transformation requirements implemented with Turf.js.
-- **Deforestation Overlay:** Automated geospatial intersection check between farm polygons and European Commission baseline forest maps.
+- **Deforestation Overlay:** Automated geospatial intersection check between farm polygons and European Commission baseline forest maps (Cutoff date: Dec 31, 2020).
 
 ---
 
@@ -176,7 +191,7 @@ We tested the prototype directly on 20+ farms in Bao Loc and Di Linh, Lam Dong:
 
 | Metric | Before (Paper Log) | With BeanLink | Improvement |
 | :--- | :--- | :--- | :--- |
-| **Harvest Logging Time** | ~15 minutes / day | **< 45 seconds** | **95% faster** |
+| **Harvest Logging Time** | ~15 minutes / day | **< 15 seconds** | **98% faster** |
 | **First-Time Completion Rate** | N/A | **85%** without training | High usability |
 | **Data Loss / Transcription Error** | ~12% paper loss | **0%** (auto-synced) | 100% reliable |
 | **EUDR Geolocation Export** | Manual (weeks) | **Instant** GeoJSON export | Production-ready |

@@ -1,0 +1,111 @@
+{
+  "info": {
+    "_postman_id": "a9b8c7d6-e5f4-4a3b-2c1d-0e9f8a7b6c5d",
+    "name": "BeanLink (CoffeeLink Agri-OS) API Collection",
+    "description": "Postman API Collection for BeanLink EUDR Traceability & Warehouse Synchronization. Verified by Ta Nguyen Khoi Nguyen (Business Analyst).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Harvest Logging",
+      "item": [
+        {
+          "name": "Submit Atomic Harvest Log",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"parcel_id\": \"7b8e1a4d-9c3f-42e1-87ab-18e0d49f6b92\",\n  \"net_weight_kg\": 85.50,\n  \"coffee_variety\": \"Robusta\",\n  \"moisture_percentage\": 14.2,\n  \"telemetry\": {\n    \"gps_latitude\": 11.575283,\n    \"gps_longitude\": 107.808912,\n    \"accuracy_radius_meters\": 4.5,\n    \"altitude_meters\": 850.2\n  },\n  \"device_offline_signature\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/harvests/log",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "harvests", "log"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Warehouse Synchronization",
+      "item": [
+        {
+          "name": "Sync Aggregated Batch (Happy Path)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"batch_code\": \"BATCH-2025-LD-0842\",\n  \"collector_id\": \"col_vn_ld_004\",\n  \"warehouse_id\": \"wh_bao_loc_central\",\n  \"physical_scale_weight_kg\": 1182.50,\n  \"constituent_harvest_ids\": [\n    \"c1f83e29-6a5b-4c2d-98e1-58291f0a4b3d\",\n    \"f2a94d18-7b6c-4d3e-89f2-69302f1b5c4e\"\n  ],\n  \"qr_verification_hash\": \"a1b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abcdef0\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/warehouse/sync-batch",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "warehouse", "sync-batch"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cadastral & EUDR Checks",
+      "item": [
+        {
+          "name": "Validate Parcel Polygon",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cadastral_lot_number\": \"Thua-104-To-22\",\n  \"province\": \"Lam Dong\",\n  \"coordinates_wgs84\": [\n    [107.808912, 11.575283],\n    [107.810541, 11.575892],\n    [107.810123, 11.574102],\n    [107.808604, 11.573911],\n    [107.808912, 11.575283]\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/eudr/validate-polygon",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "eudr", "validate-polygon"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://api.beanlink.agri-os.io",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "type": "string"
+    }
+  ]
+}
